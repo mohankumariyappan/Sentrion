@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureExam Pro | Hardware Security Portal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation Header -->
+        <header class="top-header">
+            <div class="brand">
+                <div class="logo-shield">
+                    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>SecureExam <span>Proctor Engine</span></h1>
+                    <p class="subtitle">OS-Level Hardware Integrity Security Bridge</p>
+                </div>
+            </div>
+
+            <!-- View Switcher Tabs -->
+            <nav class="nav-tabs">
+                <button class="nav-tab active" id="tab-student" onclick="switchTab('student')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    Student Exam Portal
+                </button>
+                <button class="nav-tab" id="tab-proctor" onclick="switchTab('proctor')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Proctor Security Console
+                </button>
+            </nav>
+
+            <!-- Status Indicator Pills -->
+            <div class="status-bar">
+                <div class="status-pill status-disconnected" id="companion-pill">
+                    <span class="status-dot"></span>
+                    <span id="companion-text">Checking Companion (127.0.0.1:9999)...</span>
+                </div>
+                <div class="hmac-pill" id="hmac-pill">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span id="hmac-text">No HMAC Session</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- STUDENT EXAM PORTAL -->
+            <section class="tab-pane active" id="pane-student">
+                <!-- Companion Offline Banner -->
+                <div class="alert-banner alert-danger hidden" id="companion-offline-banner">
+                    <div class="banner-icon">⚠️</div>
+                    <div class="banner-body">
+                        <h3>Companion Service Unreachable</h3>
+                        <p>The OS Security Companion app is not running or has been blocked. You must launch <code>run_companion.py</code> to proceed with your exam.</p>
+                        <button class="btn btn-small btn-light" onclick="initSession()">Retry Handshake</button>
+                    </div>
+                </div>
+
+                <!-- Exam Header Card -->
+                <div class="card exam-meta-card">
+                    <div class="exam-title-group">
+                        <h2>CS401: Advanced Systems & Architecture</h2>
+                        <p class="exam-info">Candidate: <strong>Alex Vance (ID: #88492)</strong> &bull; Duration: 60 mins</p>
+                    </div>
+                    <div class="timer-box">
+                        <span class="timer-label">Time Remaining</span>
+                        <span class="timer-value" id="exam-timer">58:42</span>
+                    </div>
+                    <div class="risk-badge badge-clear" id="exam-risk-badge">
+                        <span class="badge-dot"></span>
+                        <span id="exam-risk-text">SECURITY: CLEAR</span>
+                    </div>
+                </div>
+
+                <!-- Exam Question Card -->
+                <div class="card exam-body-card">
+                    <div class="question-header">
+                        <span class="q-number">Question 1 of 3</span>
+                        <span class="q-points">25 Points</span>
+                    </div>
+                    <h3 class="q-title">Explain how Operating System security boundaries prevent web browser sandboxes from inspecting host desktop processes directly, and how low-level input hooks operate.</h3>
+                    
+                    <div class="input-container">
+                        <label for="exam-input" class="input-label">Your Response (Monitored by Low-Level Hardware Key Event Hook):</label>
+                        <textarea id="exam-input" class="exam-textarea" placeholder="Type your answer here... Keyboard characters are cross-referenced with WH_KEYBOARD_LL hardware hooks..." rows="8"></textarea>
+                        
+                        <div class="input-meta-bar">
+                            <span class="input-stat">Char count: <strong id="char-count">0</strong></span>
+                            <span class="input-stat">Hardware Match Rate: <strong id="hw-match-rate">100%</strong></span>
+                            <span class="input-stat">Consecutive Injection Misses: <strong id="miss-count" class="text-success">0</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="exam-footer">
+                        <button class="btn btn-secondary" onclick="simulatePaste()">Test Synthetic Paste Injection</button>
+                        <div class="footer-actions">
+                            <button class="btn btn-secondary">Save Draft</button>
+                            <button class="btn btn-primary">Submit Exam</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- PROCTOR SECURITY CONSOLE -->
+            <section class="tab-pane" id="pane-proctor">
+                <!-- Overview Metric Cards -->
+                <div class="metrics-grid">
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Aggregated System Risk</span>
+                            <div class="metric-icon">🛡️</div>
+                        </div>
+                        <div class="metric-value text-emerald" id="p-metric-risk">CLEAR</div>
+                        <p class="metric-sub" id="p-metric-risk-sub">All 5 security modules nominal</p>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">HMAC-SHA256 Token</span>
+                            <div class="metric-icon">🔑</div>
+                        </div>
+                        <div class="metric-value text-cyan" id="p-metric-token">SIGNED</div>
+                        <p class="metric-sub" id="p-metric-token-sub">Secret signed & TTL valid</p>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Polling Heartbeat</span>
+                            <div class="metric-icon">⚡</div>
+                        </div>
+                        <div class="metric-value" id="p-metric-latency">1.5s</div>
+                        <p class="metric-sub">Silence watchdog limit: 3.5s</p>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Synthetic Input Misses</span>
+                            <div class="metric-icon">⌨️</div>
+                        </div>
+                        <div class="metric-value" id="p-metric-misses">0</div>
+                        <p class="metric-sub">Tolerance: ~150ms window</p>
+                    </div>
+                </div>
+
+                <!-- Detector Modules Grid -->
+                <div class="modules-section-title">
+                    <h3>Native Windows Detection Modules</h3>
+                    <button class="btn btn-small btn-secondary" onclick="clearSimulations()">Reset All Simulations</button>
+                </div>
+
+                <div class="modules-grid">
+                    <!-- Module 1: Overlay -->
+                    <div class="card module-card" id="mod-card-overlay">
+                        <div class="mod-header">
+                            <div class="mod-title">
+                                <span class="mod-icon">🖥️</span>
+                                <h4>Overlay / Ghost Windows</h4>
+                            </div>
+                            <span class="status-tag tag-clear" id="mod-tag-overlay">CLEAR</span>
+                        </div>
+                        <p class="mod-desc">Walks <code>EnumWindows</code>, queries <code>GWL_EXSTYLE</code> for <code>WS_EX_LAYERED + WS_EX_TRANSPARENT</code> or stealth <code>WS_EX_TOPMOST</code>.</p>
+                        <div class="mod-details" id="mod-details-overlay">No suspicious overlay windows detected</div>
+                        <div class="mod-actions">
+                            <button class="btn btn-xs btn-outline-danger" onclick="triggerSim('overlay_detection', 'VIOLATION', 'Click-through ghost window detected (WS_EX_LAYERED)', [{'exe_name': 'StealthOverlay.exe', 'exe_path': 'C:\\Users\\Public\\StealthOverlay.exe', 'dimensions': '1920x1080', 'reasons': ['WS_EX_LAYERED + WS_EX_TRANSPARENT']}])">Simulate Violation</button>
+                        </div>
+                    </div>
+
+                    <!-- Module 2: VM -->
+                    <div class="card module-card" id="mod-card-vm">
+                        <div class="mod-header">
+                            <div class="mod-title">
+                                <span class="mod-icon">💻</span>
+                                <h4>Hypervisor / VM Check</h4>
+                            </div>
+                            <span class="status-tag tag-clear" id="mod-tag-vm">CLEAR</span>
+                        </div>
+                        <p class="mod-desc">CPUID ECX Bit 31, CPUID Leaf 0x40000000 Vendor strings, WMI SMBIOS & MAC OUI matching.</p>
+                        <div class="mod-details" id="mod-details-vm">Physical host environment confirmed</div>
+                        <div class="mod-actions">
+                            <button class="btn btn-xs btn-outline-danger" onclick="triggerSim('vm_detection', 'VIOLATION', 'Virtual Machine Environment Detected (VMware/VirtualBox)', [{'method': 'CPUID Leaf 0x40000000', 'indicator': 'Hypervisor Signature: VBoxVBoxVBox'}, {'method': 'WMI BIOS', 'indicator': 'VirtualBox BIOS'}])">Simulate Violation</button>
+                        </div>
+                    </div>
+
+                    <!-- Module 3: Process Blacklist -->
+                    <div class="card module-card" id="mod-card-process">
+                        <div class="mod-header">
+                            <div class="mod-title">
+                                <span class="mod-icon">🚫</span>
+                                <h4>Process Blacklist Snapshot</h4>
+                            </div>
+                            <span class="status-tag tag-clear" id="mod-tag-process">CLEAR</span>
+                        </div>
+                        <p class="mod-desc"><code>CreateToolhelp32Snapshot</code> process enumeration for AnyDesk, TeamViewer, OBS, Parsec, Discord, etc.</p>
+                        <div class="mod-details" id="mod-details-process">No blacklisted processes active</div>
+                        <div class="mod-actions">
+                            <button class="btn btn-xs btn-outline-danger" onclick="triggerSim('process_blacklist', 'VIOLATION', 'Prohibited Remote Desktop / Streaming App Active', [{'pid': 8840, 'exe_name': 'AnyDesk.exe', 'app_name': 'AnyDesk Remote Desktop', 'severity': 'VIOLATION'}])">Simulate Violation</button>
+                        </div>
+                    </div>
+
+                    <!-- Module 4: Hardware -->
+                    <div class="card module-card" id="mod-card-hardware">
+                        <div class="mod-header">
+                            <div class="mod-title">
+                                <span class="mod-icon">📷</span>
+                                <h4>Display & Camera Checks</h4>
+                            </div>
+                            <span class="status-tag tag-clear" id="mod-tag-hardware">CLEAR</span>
+                        </div>
+                        <p class="mod-desc"><code>EnumDisplayMonitors</code> multi-display count & DirectShow/WMI virtual camera driver enumeration.</p>
+                        <div class="mod-details" id="mod-details-hardware">Single display & physical camera verified</div>
+                        <div class="mod-actions">
+                            <button class="btn btn-xs btn-outline-warning" onclick="triggerSim('hardware_checks', 'WARNING', 'Virtual Camera Software Driver Detected', [{'category': 'Camera Device', 'issue': 'OBS Virtual Camera Driver Active'}])">Simulate Warning</button>
+                        </div>
+                    </div>
+
+                    <!-- Module 5: Keystroke -->
+                    <div class="card module-card" id="mod-card-keystroke">
+                        <div class="mod-header">
+                            <div class="mod-title">
+                                <span class="mod-icon">⌨️</span>
+                                <h4>Low-Level Keystroke Hook</h4>
+                            </div>
+                            <span class="status-tag tag-clear" id="mod-tag-keystroke">CLEAR</span>
+                        </div>
+                        <p class="mod-desc"><code>WH_KEYBOARD_LL</code> hardware hook cross-referenced with JS character inputs (~150ms tolerance).</p>
+                        <div class="mod-details" id="mod-details-keystroke">Hardware keystroke pipeline synchronized</div>
+                        <div class="mod-actions">
+                            <button class="btn btn-xs btn-outline-danger" onclick="triggerSim('keystroke_injection', 'VIOLATION', 'CRITICAL: Synthetic Keystroke Injection detected (3 un-hooked characters)', [{'char_received': 'auto_text', 'consecutive_misses': 3, 'injection_mechanism': 'Message-Queue Injection (PostMessageW / SendMessageW)'}])">Simulate Violation</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Stream Table -->
+                <div class="card events-card">
+                    <div class="events-header">
+                        <h3>Live Security Event Log</h3>
+                        <span class="events-count" id="events-count">0 events logged</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="events-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Module</th>
+                                    <th>Status</th>
+                                    <th>Details & Findings</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-tbody">
+                                <tr>
+                                    <td colspan="4" class="empty-table">No security events logged yet. Monitoring system active.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- EXAM LOCKOUT OVERLAY MODAL -->
+        <div class="modal-overlay hidden" id="lockout-modal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div class="modal-icon-shield">⚠️</div>
+                    <div>
+                        <h2>EXAM SESSION PAUSED</h2>
+                        <p class="modal-subtitle">Security Violation / Companion Disconnection Flagged</p>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="lockout-reason-box" id="lockout-reason-box">
+                        <div class="reason-title" id="lockout-title">VIOLATION DETECTED</div>
+                        <p id="lockout-details">Loading security details...</p>
+                        <div class="findings-box hidden" id="lockout-findings"></div>
+                    </div>
+                    <p class="lockout-notice">All exam inputs have been locked. This event has been logged with an accurate timestamp and reported to your proctor. Do not close this browser window.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="attemptResume()">Request Proctor Override & Resume</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

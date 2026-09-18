@@ -1,0 +1,17 @@
+{
+  "service_name": "Sentrion Exam Security Companion Native Service",
+  "port": 9999,
+  "allowed_origins": [
+    "http://127.0.0.1:9999",
+    "http://localhost:9999",
+    "https://exam.university.edu",
+    "https://portal.sentrion-exam.org"
+  ],
+  "rate_limit": {
+    "max_requests": 40,
+    "window_seconds": 5.0
+  },
+  "caching": {
+    "snapshot_ttl_seconds": 0.5
+  }
+}

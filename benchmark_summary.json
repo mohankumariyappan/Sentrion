@@ -1,0 +1,27 @@
+{
+  "focus_hook": {
+    "count": 0,
+    "min_ms": 0.0,
+    "max_ms": 0.0,
+    "avg_ms": 0.0
+  },
+  "wmi_process_creation": {
+    "count": 0,
+    "min_ms": 0.0,
+    "max_ms": 0.0,
+    "avg_ms": 0.0
+  },
+  "display_change": {
+    "count": 1,
+    "min_ms": 0.3,
+    "max_ms": 0.3,
+    "avg_ms": 0.3
+  },
+  "resources": {
+    "samples_count": 2,
+    "cpu_percent_avg": 102.25,
+    "cpu_percent_max": 106.1,
+    "ram_rss_mb_avg": 49.52,
+    "ram_rss_mb_max": 57.62
+  }
+}

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENTRION · Invigilator Live Console</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpolygon points='32,4 56,18 56,46 32,60 8,46 8,18' fill='%23080B11' stroke='%230ea5e9' stroke-width='4'/%3E%3Cpolygon points='32,12 50,22 50,42 32,52 14,42 14,22' fill='none' stroke='%23334155' stroke-width='2'/%3E%3Ccircle cx='56' cy='18' r='3.5' fill='%2310b981'/%3E%3Ccircle cx='56' cy='18' r='6' stroke='%2310b981' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='26' cy='34' r='7' stroke='%230ea5e9' stroke-width='3' fill='none'/%3E%3Ccircle cx='26' cy='34' r='3' fill='%2310b981'/%3E%3Cpath d='M 17,25 A 13,13 0 0,1 26,21' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M 11,20 A 20,20 0 0,1 26,14' stroke='%2310b981' stroke-width='2.8' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #09090b;
+    --surface: #18181b;
+    --surface-raised: #27272a;
+    --border: #3f3f46;
+    --border-soft: #27272a;
+    
+    --text: #ffffff;
+    --text-muted: #d4d4d8;
+    --text-dim: #a1a1aa;
+    
+    --clear: #10b981; 
+    --clear-dim: rgba(16, 185, 129, 0.15);
+    
+    --warning: #f59e0b;
+    --warning-dim: rgba(245, 158, 11, 0.15);
+    
+    --violation: #ef4444;
+    --violation-dim: rgba(239, 68, 68, 0.15);
+    
+    --accent: #0284c7; 
+    --accent-blue: #38bdf8;
+    --accent-hover: #0369a1;
+    
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 1000px 600px at 15% -10%, rgba(2, 132, 199, 0.08), transparent),
+      radial-gradient(ellipse 800px 500px at 100% 20%, rgba(16, 185, 129, 0.05), transparent);
+  }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 24px; border-bottom: 1px solid var(--border-soft); margin-bottom: 32px; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .brand-svg { width: 48px; height: 48px; }
+  .brand-title { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.12em; color: #ffffff; line-height: 1; }
+  .brand-sub { font-family: var(--font-display); font-size: 11px; color: var(--accent-blue); letter-spacing: 0.22em; font-weight: 700; margin-top: 4px; }
+  .session-badge { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 24px; }
+  .session-badge span { color: var(--clear); font-weight: 600; }
+
+  .passcode-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; margin-bottom: 28px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+  .panel-header { display: flex; justify-content: space-between; align-items: center; }
+  .panel-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px; }
+  .passcodes-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .passcode-pill { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; padding: 8px 14px; border-radius: 8px; background: var(--surface-raised); border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+  .passcode-pill.unused { border-color: var(--accent-blue); color: var(--accent-blue); }
+  .passcode-pill.used { border-color: var(--border-soft); color: var(--text-dim); opacity: 0.6; text-decoration: line-through; }
+
+  .btn-gen { background: var(--accent); color: #ffffff; font-family: var(--font-display); font-size: 13px; font-weight: 700; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+  .btn-gen:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+  .card-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 24px; }
+  .candidate-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 16px; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+  .candidate-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+  
+  .card-header { display: flex; justify-content: space-between; align-items: center; }
+  .candidate-id-text { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #ffffff; }
+  .score-badge { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; }
+  .badge-clear { color: var(--clear); } .badge-warning { color: var(--warning); } .badge-violation { color: var(--violation); }
+
+  .checks-grid-card { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: var(--font-mono); font-size: 12px; background: var(--surface-raised); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-soft); }
+  .check-item { display: flex; justify-content: space-between; }
+  .check-item b { font-weight: 700; }
+
+  .event-stream { height: 95px; overflow-y: auto; background: #060a12; border-radius: 8px; padding: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); border: 1px solid var(--border-soft); }
+  .event-entry { border-left: 2.5px solid var(--accent-blue); padding-left: 8px; margin-bottom: 6px; line-height: 1.4; }
+
+  .evidence-tray { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; margin-top: 4px; }
+  .evidence-thumb { width: 80px; height: 50px; border-radius: 6px; border: 1px solid var(--violation); object-fit: cover; cursor: pointer; background: #000; transition: transform 0.2s; }
+  .evidence-thumb:hover { transform: scale(1.05); border-color: var(--accent-blue); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 24px; }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; max-width: 840px; width: 100%; padding: 24px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
+  .modal-close:hover { color: var(--text); }
+  
+  .badge-terminated { background: var(--violation-dim); color: var(--violation); border-color: rgba(239, 68, 68, 0.4); font-weight: 700; animation: pulseRed 1.5s infinite; }
+  @keyframes pulseRed { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } }
+
+  .btn-resume-session { background: #10b981; color: #ffffff; font-family: var(--font-display); font-size: 12px; font-weight: 700; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; width: 100%; margin-top: 4px; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-resume-session:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
+  .btn-resume-session:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .faculty-alert-toast { display: none; background: var(--violation-dim); border: 2px solid var(--violation); color: var(--violation); font-family: var(--font-display); font-weight: 700; font-size: 14px; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; text-align: center; letter-spacing: 0.03em; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2); animation: fadeIn 0.4s ease; }
+  .faculty-alert-toast.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  
+  ::-webkit-scrollbar { width: 8px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <svg class="brand-svg" viewBox="0 0 64 64" fill="none">
+        <polygon points="32,4 56,18 56,46 32,60 8,46 8,18" fill="#09090B" stroke="#38bdf8" stroke-width="4"/>
+        <polygon points="32,12 50,22 50,42 32,52 14,42 14,22" fill="none" stroke="#3f3f46" stroke-width="2"/>
+        <circle cx="56" cy="18" r="3.5" fill="#10b981"/>
+        <circle cx="26" cy="34" r="6" stroke="#38bdf8" stroke-width="2.5" fill="none"/>
+        <circle cx="26" cy="34" r="3" fill="#10b981"/>
+      </svg>
+      <div>
+        <div class="brand-title">SENTRION</div>
+        <div class="brand-sub">INVIGILATOR LIVE CONSOLE</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:4px 12px; border-radius:24px;">
+        <span id="serverDot" style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+        <select id="serverSelect" style="background:transparent; border:none; color:var(--text); font-family:var(--font-mono); font-size:12px; outline:none; cursor:pointer;">
+          <option value="wss://sentrion-relay.onrender.com" style="background:#18181b; color:#ffffff;">🌐 Cloud Relay (Render)</option>
+          <option value="ws://localhost:8080" style="background:#18181b; color:#ffffff;">💻 Local Relay (Port 8080)</option>
+        </select>
+      </div>
+      <div class="session-badge"><span id="candidateCount">Monitored Sessions: 0</span></div>
+    </div>
+  </div>
+
+  <!-- Passcode Management Panel -->
+  <div class="passcode-panel">
+    <div class="panel-header">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div class="panel-title">🔑 6-Digit One-Time Exam Passcodes</div>
+        <span id="passcodeDateBadge" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 10px; border-radius: 6px;">📅 Today: Syncing...</span>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-gen" id="genStandardBtn" style="background:#0284c7;">📝 +5 Standard (No Cam)</button>
+        <button class="btn-gen" id="genCameraBtn" style="background:#059669;">📷 +5 Camera Proctored</button>
+        <button class="btn-gen" id="resetDailyBtn" style="background:#475569; border:1px solid #64748b;" title="Reset and purge previous days codes">🔄 Reset Daily Codes</button>
+        <button class="btn-gen" id="clearSessionsBtn" style="background:#7f1d1d; border-color:#ef4444; color:#ffffff;">🗑️ Clear Sessions</button>
+      </div>
+    </div>
+
+    <!-- Passcode Types Sections -->
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <div style="font-family: var(--font-display); font-size: 12px; font-weight: 700; color: #93c5fd; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>📝 STANDARD WRITTEN EXAM PASSCODES</span>
+          <small style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); font-weight: normal;">(Camera Exempt · Pen & Paper Allowed)</small>
+        </div>
+        <div class="passcodes-grid" id="standardPasscodesGrid">
+          <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-blue);">Connecting to Render cloud server...</div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--border-soft); padding-top: 12px;">
+        <div style="font-family: var(--font-display); font-size: 12px; font-weight: 700; color: #6ee7b7; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>📷 AI CAMERA-PROCTORED EXAM PASSCODES</span>
+          <small style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); font-weight: normal;">(Camera, FaceMesh & Gaze Tracking Active During Written Exam)</small>
+        </div>
+        <div class="passcodes-grid" id="cameraPasscodesGrid">
+          <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-blue);">Connecting to Render cloud server...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faculty-alert-toast" id="facultyAlertToast"></div>
+
+  <div class="card-title">Live Monitored Candidate Sessions</div>
+  <div class="grid" id="candidatesGrid">
+    <div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); grid-column: 1 / -1; text-align: center; padding: 40px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;">
+      No active candidate sessions connected. Standing by for candidate logins...
+    </div>
+  </div>
+
+</div>
+
+<!-- Full Screen Screenshot Evidence Lightbox Modal -->
+<div class="modal-overlay" id="imageModal">
+  <div class="modal-content">
+    <button class="modal-close" id="closeModalBtn">✕</button>
+    <div style="font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--violation); margin-bottom: 12px;">🚨 FORENSIC EVIDENCE SCREENSHOT PREVIEW</div>
+    <img id="modalImg" src="" style="width: 100%; border-radius: 10px; border: 1px solid var(--border); display: block; margin-bottom: 14px;">
+  </div>
+</div>
+
+<script>
+  const LOCAL_WS = 'ws://localhost:8080';
+  const CLOUD_WS = 'wss://sentrion-relay.onrender.com';
+  let activeRelayUrl = localStorage.getItem('sentrion_relay_url') || CLOUD_WS;
+
+  const candidatesGrid = document.getElementById('candidatesGrid');
+  const standardPasscodesGrid = document.getElementById('standardPasscodesGrid');
+  const cameraPasscodesGrid = document.getElementById('cameraPasscodesGrid');
+  const passcodeDateBadge = document.getElementById('passcodeDateBadge');
+  const genStandardBtn = document.getElementById('genStandardBtn');
+  const genCameraBtn = document.getElementById('genCameraBtn');
+  const resetDailyBtn = document.getElementById('resetDailyBtn');
+  const clearSessionsBtn = document.getElementById('clearSessionsBtn');
+  const candidateCount = document.getElementById('candidateCount');
+  const facultyAlertToast = document.getElementById('facultyAlertToast');
+  const imageModal = document.getElementById('imageModal');
+  const modalImg = document.getElementById('modalImg');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const serverSelect = document.getElementById('serverSelect');
+  const serverDot = document.getElementById('serverDot');
+  
+  const candidateMap = new Map();
+  let ws = null;
+  let currentPasscodesList = [];
+
+  function getTodayDateStr() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function isCameraPasscode(code, serverType) {
+    if (serverType && serverType.toString().toUpperCase() === 'CAMERA') return true;
+    if (!code) return false;
+    const c = code.toString().trim();
+    if (c === '222222') return true;
+    if (c === '123456') return false;
+    return c.startsWith('8') || c.startsWith('9') || c.startsWith('7');
+  }
+
+  function setServerStatus(status) {
+    if (!serverDot) return;
+    if (status === 'connected') {
+      serverDot.style.background = '#10b981';
+      serverDot.title = 'Connected to proctor relay';
+    } else if (status === 'connecting') {
+      serverDot.style.background = '#f59e0b';
+      serverDot.title = 'Connecting...';
+    } else {
+      serverDot.style.background = '#ef4444';
+      serverDot.title = 'Disconnected / Offline';
+    }
+  }
+
+  if (serverSelect) {
+    serverSelect.value = activeRelayUrl;
+    serverSelect.addEventListener('change', (e) => {
+      activeRelayUrl = e.target.value;
+      localStorage.setItem('sentrion_relay_url', activeRelayUrl);
+      if (ws) {
+        try { ws.close(); } catch(err) {}
+      }
+      initWebSocket();
+    });
+  }
+
+  function initWebSocket() {
+    setServerStatus('connecting');
+    const isCloud = activeRelayUrl.includes('onrender.com');
+    const serverName = isCloud ? 'Render cloud server' : 'Local port 8080 server';
+    
+    if (standardPasscodesGrid && (!currentPasscodesList || currentPasscodesList.length === 0)) {
+      standardPasscodesGrid.innerHTML = `<div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-blue);">Connecting to ${serverName}...</div>`;
+    }
+    if (cameraPasscodesGrid && (!currentPasscodesList || currentPasscodesList.length === 0)) {
+      cameraPasscodesGrid.innerHTML = `<div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-blue);">Connecting to ${serverName}...</div>`;
+    }
+    
+    try {
+      ws = new WebSocket(activeRelayUrl);
+    } catch (e) {
+      setServerStatus('disconnected');
+      setTimeout(initWebSocket, 3000);
+      return;
+    }
+
+    ws.onopen = () => {
+      console.log('Connected to relay server:', activeRelayUrl);
+      setServerStatus('connected');
+      ws.send(JSON.stringify({ type: 'REGISTER_ROLE', role: 'MONITOR' }));
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'PASSCODE_LIST_UPDATE') {
+        renderPasscodes(msg.passcodes, msg.todayDate);
+      } else if (msg.type === 'CANDIDATE_TELEMETRY' || msg.type === 'CANDIDATE_LIST_UPDATE') {
+        updateCandidate(msg.candidateId, msg.payload || msg.data);
+      } else if (msg.type === 'CANDIDATE_NEW_CODE_ASSIGNED') {
+        if (msg.candidateId && msg.newCode) {
+          assignedCodesMap.set(msg.candidateId, msg.newCode);
+        }
+        if (candidateMap.has(msg.candidateId)) {
+          const current = candidateMap.get(msg.candidateId);
+          current.newAssignedCode = msg.newCode;
+          if (msg.examType) current.examType = msg.examType;
+          updateCandidate(msg.candidateId, current);
+        }
+        if (facultyAlertToast) {
+          facultyAlertToast.innerHTML = `🔑 <strong>NEW ACCESS CODE GENERATED:</strong> Assigned code <strong style="color:#ffffff; font-size:16px; letter-spacing:2px;">${msg.newCode}</strong> to Candidate <strong>${msg.candidateId}</strong> (${msg.examType === 'CAMERA' ? '📷 Camera Proctored' : '📝 Standard'}). Share this code with the student to resume their test!`;
+          facultyAlertToast.classList.add('active');
+        }
+      } else if (msg.type === 'CANDIDATE_RESUMED_NOTIFICATION') {
+        assignedCodesMap.delete(msg.candidateId);
+        if (candidateMap.has(msg.candidateId)) {
+          const current = candidateMap.get(msg.candidateId);
+          current.integrity_score = 100;
+          current.isTerminated = false;
+          current.overall_risk = 'CLEAR';
+          if (msg.examType) current.examType = msg.examType;
+          delete current.newAssignedCode;
+          updateCandidate(msg.candidateId, current);
+        }
+        if (facultyAlertToast) {
+          facultyAlertToast.innerHTML = `🟢 <strong>SESSION RESUMED:</strong> Candidate <strong>${msg.candidateId}</strong> has successfully unlocked their session with the new code and continued the test!`;
+          facultyAlertToast.classList.add('active');
+          setTimeout(() => facultyAlertToast.classList.remove('active'), 5000);
+        }
+      } else if (msg.type === 'ALL_SESSIONS_CLEARED') {
+        candidateMap.clear();
+        assignedCodesMap.clear();
+        candidatesGrid.innerHTML = `<div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); grid-column: 1 / -1; text-align: center; padding: 40px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;">No active candidate sessions connected. Standing by for candidate logins...</div>`;
+        candidateCount.innerText = `Monitored Sessions: 0`;
+        if (facultyAlertToast) facultyAlertToast.classList.remove('active');
+      } else if (msg.type === 'CANDIDATE_DISCONNECTED') {
+        candidateMap.delete(msg.candidateId);
+        assignedCodesMap.delete(msg.candidateId);
+        document.getElementById(`card-${msg.candidateId}`)?.remove();
+        candidateCount.innerText = `Monitored Sessions: ${candidateMap.size}`;
+        if (candidateMap.size === 0) {
+          candidatesGrid.innerHTML = `<div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); grid-column: 1 / -1; text-align: center; padding: 40px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;">No active candidate sessions connected. Standing by for candidate logins...</div>`;
+        }
+      }
+    };
+
+    ws.onclose = () => {
+      setServerStatus('disconnected');
+      setTimeout(initWebSocket, 3000);
+    };
+
+    ws.onerror = () => {
+      setServerStatus('disconnected');
+      try { ws.close(); } catch(e) {}
+    };
+  }
+
+  function renderPasscodes(passcodes, todayDate) {
+    const today = todayDate || getTodayDateStr();
+    if (passcodeDateBadge) {
+      passcodeDateBadge.innerHTML = `📅 Today: <strong>${today}</strong> (Daily Auto-Reset Active)`;
+    }
+    if (!passcodes || !Array.isArray(passcodes)) return;
+    currentPasscodesList = passcodes;
+
+    if (standardPasscodesGrid) standardPasscodesGrid.innerHTML = '';
+    if (cameraPasscodesGrid) cameraPasscodesGrid.innerHTML = '';
+
+    const standardCodes = passcodes.filter(p => !isCameraPasscode(p.code, p.type));
+    let cameraCodes = passcodes.filter(p => isCameraPasscode(p.code, p.type));
+
+    // Fallback: If connecting to legacy server where camera codes were not pre-generated,
+    // ensure faculty always has access to camera-proctored codes!
+    if (cameraCodes.length === 0) {
+      cameraCodes = [
+        { code: '222222', type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today },
+        { code: '849102', type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today },
+        { code: '891234', type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today },
+        { code: '912045', type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today },
+        { code: '934512', type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today },
+        { code: '987654', type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today }
+      ];
+      cameraCodes.forEach(c => {
+        if (!currentPasscodesList.some(p => p.code === c.code)) currentPasscodesList.push(c);
+      });
+    }
+
+    try {
+      localStorage.setItem('sentrion_cached_passcodes', JSON.stringify({
+        date: today,
+        passcodes: currentPasscodesList
+      }));
+    } catch(e) {}
+
+    function createPill(p, isCamera) {
+      const pill = document.createElement('div');
+      pill.className = `passcode-pill ${p.isUsed ? 'used' : 'unused'}`;
+      pill.style.cursor = 'pointer';
+      pill.title = 'Click to copy 6-digit passcode';
+      const borderAccent = isCamera ? '#10b981' : '#38bdf8';
+      const badgeText = isCamera ? '📷 CAM' : '📝 STD';
+      if (!p.isUsed) {
+        pill.style.borderColor = borderAccent;
+        pill.style.color = borderAccent;
+      }
+      pill.innerHTML = `
+        <span style="letter-spacing:1px;">${p.code}</span>
+        <span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(255,255,255,0.08); font-weight:700;">${badgeText}</span>
+        <small style="font-size:0.7rem; font-weight:normal;">${p.isUsed ? '✓ USED (' + (p.usedBy || 'Cand') + ')' : '● UNUSED'}</small>
+      `;
+      pill.addEventListener('click', () => {
+        navigator.clipboard.writeText(p.code).then(() => {
+          const original = pill.innerHTML;
+          pill.innerHTML = `<span>✓ Copied ${p.code}</span>`;
+          setTimeout(() => { pill.innerHTML = original; }, 1500);
+        }).catch(() => {});
+      });
+      return pill;
+    }
+
+    if (standardPasscodesGrid) {
+      if (standardCodes.length === 0) {
+        standardPasscodesGrid.innerHTML = '<div style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim);">No standard codes available. Click "+5 Standard (No Cam)" to generate.</div>';
+      } else {
+        standardCodes.forEach(p => standardPasscodesGrid.appendChild(createPill(p, false)));
+      }
+    }
+
+    if (cameraPasscodesGrid) {
+      if (cameraCodes.length === 0) {
+        cameraPasscodesGrid.innerHTML = '<div style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim);">No camera proctored codes available. Click "+5 Camera Proctored" to generate.</div>';
+      } else {
+        cameraCodes.forEach(p => cameraPasscodesGrid.appendChild(createPill(p, true)));
+      }
+    }
+  }
+
+  function performDailyReset() {
+    const today = getTodayDateStr();
+    const freshList = [
+      { code: '123456', type: 'STANDARD', isUsed: false, usedBy: null, dateStr: today },
+      { code: '222222', type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today }
+    ];
+    for (let i = 0; i < 5; i++) {
+      const stdCode = Math.floor(100000 + Math.random() * 500000).toString();
+      freshList.push({ code: stdCode, type: 'STANDARD', isUsed: false, usedBy: null, dateStr: today });
+    }
+    for (let i = 0; i < 5; i++) {
+      const camCode = Math.floor(800000 + Math.random() * 200000).toString();
+      freshList.push({ code: camCode, type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today });
+    }
+
+    renderPasscodes(freshList, today);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'RESET_DAILY_PASSCODES' }));
+    }
+
+    if (facultyAlertToast) {
+      facultyAlertToast.innerHTML = `🔄 <strong>DAILY PASSCODES RESET:</strong> All previous codes cleared. 10 fresh exam passcodes (5 Standard + 5 Camera-Proctored) are ready for today!`;
+      facultyAlertToast.style.borderColor = '#10b981';
+      facultyAlertToast.style.color = '#10b981';
+      facultyAlertToast.style.background = 'rgba(16, 185, 129, 0.15)';
+      facultyAlertToast.classList.add('active');
+      setTimeout(() => {
+        facultyAlertToast.classList.remove('active');
+        facultyAlertToast.style.borderColor = '';
+        facultyAlertToast.style.color = '';
+        facultyAlertToast.style.background = '';
+      }, 5000);
+    }
+  }
+
+  // Check saved passcodes on initial startup
+  const todayStr = getTodayDateStr();
+  try {
+    const cached = JSON.parse(localStorage.getItem('sentrion_cached_passcodes') || 'null');
+    if (cached && cached.date === todayStr && cached.passcodes && cached.passcodes.length > 0) {
+      renderPasscodes(cached.passcodes, todayStr);
+    } else {
+      performDailyReset();
+    }
+  } catch(e) {
+    performDailyReset();
+  }
+
+  initWebSocket();
+
+  if (genStandardBtn) {
+    genStandardBtn.addEventListener('click', () => {
+      const today = getTodayDateStr();
+      for (let i = 0; i < 5; i++) {
+        const stdCode = Math.floor(100000 + Math.random() * 500000).toString();
+        currentPasscodesList.push({ code: stdCode, type: 'STANDARD', isUsed: false, usedBy: null, dateStr: today });
+      }
+      renderPasscodes(currentPasscodesList, today);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'GENERATE_PASSCODES', count: 5, passcodeType: 'STANDARD' }));
+      }
+    });
+  }
+
+  if (genCameraBtn) {
+    genCameraBtn.addEventListener('click', () => {
+      const today = getTodayDateStr();
+      for (let i = 0; i < 5; i++) {
+        const camCode = Math.floor(800000 + Math.random() * 200000).toString();
+        currentPasscodesList.push({ code: camCode, type: 'CAMERA', isUsed: false, usedBy: null, dateStr: today });
+      }
+      renderPasscodes(currentPasscodesList, today);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'GENERATE_PASSCODES', count: 5, passcodeType: 'CAMERA' }));
+      }
+    });
+  }
+
+  if (resetDailyBtn) {
+    resetDailyBtn.addEventListener('click', () => {
+      if (confirm("Are you sure you want to reset all daily passcodes? This will clear today's used and unused codes and generate 10 fresh codes.")) {
+        performDailyReset();
+      }
+    });
+  }
+
+  function renderAppBadges(userApps, blacklisted, hostBrowser) {
+    let html = '';
+    const host = (hostBrowser || 'chrome.exe').toLowerCase();
+    const blacklistedExes = new Set((blacklisted || []).map(b => (b.exe_name || '').toLowerCase()));
+
+    if (blacklisted && blacklisted.length > 0) {
+      blacklisted.forEach(b => {
+        html += `<span class="app-tag flagged" style="font-size:10px; padding:3px 8px; margin:2px;">🚨 ${b.exe_name}</span>`;
+      });
+    }
+
+    let cleanList = (userApps || []).filter(appName => !blacklistedExes.has(appName.toLowerCase()));
+    if (!cleanList.some(a => a.toLowerCase() === host)) {
+      cleanList.unshift(host);
+    }
+
+    cleanList.forEach(appName => {
+      const isHost = appName.toLowerCase() === host;
+      if (isHost) {
+        html += `<span class="app-tag" style="font-size:10px; padding:3px 8px; margin:2px; border-color:var(--accent-blue); color:var(--accent-blue);">🌐 ${appName}</span>`;
+      } else {
+        html += `<span class="app-tag" style="font-size:10px; padding:3px 8px; margin:2px;">💻 ${appName}</span>`;
+      }
+    });
+
+    return html || '<span style="color:var(--text-dim); font-size:10px;">No 3rd-party apps active</span>';
+  }
+
+  const assignedCodesMap = new Map();
+
+  function generateRandom6DigitCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  function reassignNewPasscode(candidateId) {
+    const newCode = generateRandom6DigitCode();
+    assignedCodesMap.set(candidateId, newCode);
+    
+    // Immediately update local candidate map & UI so it shows RIGHT THERE without waiting!
+    let cand = candidateMap.get(candidateId) || {
+      integrity_score: 100,
+      isTerminated: true,
+      userApps: [],
+      blacklistedApps: []
+    };
+    cand.newAssignedCode = newCode;
+    cand.isTerminated = true;
+    candidateMap.set(candidateId, cand);
+    updateCandidate(candidateId, cand);
+
+    // Also send over WebSocket to server if connected
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'REASSIGN_NEW_PASSCODE',
+        candidateId: candidateId,
+        customCode: newCode
+      }));
+    }
+
+    if (facultyAlertToast) {
+      facultyAlertToast.innerHTML = `🔑 <strong>NEW ACCESS CODE GENERATED:</strong> Assigned passcode <strong style="color:#ffffff; font-size:18px; letter-spacing:3px;">${newCode}</strong> to Candidate <strong>${candidateId}</strong>. Share this code with the student to resume their test!`;
+      facultyAlertToast.classList.add('active');
+    }
+  }
+
+  function copyCodeToClipboard(code, el) {
+    navigator.clipboard.writeText(code).then(() => {
+      const oldText = el.innerText;
+      el.innerText = '✓ Copied!';
+      setTimeout(() => { el.innerText = oldText; }, 2000);
+    }).catch(() => {});
+  }
+
+  function updateCandidate(id, data) {
+    if (!data) return;
+
+    // Persist reassigned passcode across continuous telemetry polls until candidate resumes!
+    if (assignedCodesMap.has(id)) {
+      data.newAssignedCode = assignedCodesMap.get(id);
+    }
+
+    // Persist and merge forensic evidence screenshots across heartbeats
+    const existing = candidateMap.get(id);
+    if (existing && existing.evidences && existing.evidences.length > 0) {
+      if (!data.evidences || data.evidences.length === 0) {
+        data.evidences = existing.evidences;
+      } else {
+        const merged = [...data.evidences, ...existing.evidences];
+        data.evidences = [...new Set(merged)].slice(0, 50);
+      }
+    }
+
+    const emptyMsg = candidatesGrid.querySelector("div");
+    if (emptyMsg && emptyMsg.textContent.includes("Standing by")) {
+      candidatesGrid.innerHTML = "";
+    }
+
+    candidateMap.set(id, data);
+    candidateCount.innerText = `Monitored Sessions: ${candidateMap.size}`;
+
+    let card = document.getElementById(`card-${id}`);
+    if (!card) {
+      card = document.createElement('div'); card.id = `card-${id}`; card.className = 'candidate-card';
+      candidatesGrid.appendChild(card);
+    }
+
+    const score = data.integrity_score !== undefined ? data.integrity_score : 100;
+    const isTerminated = data.isTerminated || score < 80 || (data.overall_risk && data.overall_risk.toUpperCase() === 'TERMINATED');
+    const risk = isTerminated ? 'LOCKED' : (data.overall_risk || 'CLEAR').toUpperCase();
+    const badgeClass = isTerminated ? 'badge-terminated' : `badge-${risk.toLowerCase()}`;
+    const checks = data.checks || {};
+
+    if (isTerminated && !data.newAssignedCode && facultyAlertToast) {
+      facultyAlertToast.innerHTML = `🔒 <strong>FACULTY ALERT:</strong> Candidate <strong>${id}</strong> is LOCKED (${data.terminationReason || 'Score < 80% due to tab switch / inactivity'}). Click "🔑 Reassign New Access Code" to issue a new passcode.`;
+      facultyAlertToast.classList.add('active');
+    }
+
+    const isCamera = (data.examType === 'CAMERA');
+    const modeBadge = isCamera
+      ? `<span style="font-family:var(--font-mono); font-size:10px; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:6px; padding:2px 8px;">📷 CAMERA PROCTORED</span>`
+      : `<span style="font-family:var(--font-mono); font-size:10px; font-weight:700; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; padding:2px 8px;">📝 STANDARD (NO CAM)</span>`;
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div class="candidate-id-text">${id}</div>
+            ${modeBadge}
+            <button type="button" onclick="clearCandidateSession('${id}')" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ef4444; border-radius:6px; padding:2px 8px; font-size:11px; cursor:pointer; font-family:var(--font-mono);" title="Clear Candidate Session">✕ Dismiss</button>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); margin-top:2px;">Characters Typed: ${data.answerLength || 0}</div>
+        </div>
+        <div class="score-badge ${badgeClass}">${risk} (${score}%)</div>
+      </div>
+      <div>
+        <small style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); font-weight:700;">Active Desktop Applications:</small>
+        <div style="display:flex; flex-wrap:wrap; gap:2px; margin-top:4px;">
+          ${renderAppBadges(data.userApps, data.blacklistedApps, data.hostBrowser)}
+        </div>
+      </div>
+      <div class="checks-grid-card">
+        <div class="check-item"><span>Processes:</span> <b style="color:${checks.process_scanner==='PASS'?'var(--clear)':'var(--violation)'}">${checks.process_scanner||'PASS'}</b></div>
+        <div class="check-item"><span>VM/Sandbox:</span> <b style="color:${checks.vm_detector==='PASS'?'var(--clear)':'var(--violation)'}">${checks.vm_detector||'PASS'}</b></div>
+        <div class="check-item"><span>Overlay:</span> <b style="color:${checks.overlay_scanner==='PASS'?'var(--clear)':'var(--violation)'}">${checks.overlay_scanner||'PASS'}</b></div>
+        <div class="check-item"><span>Keystrokes:</span> <b style="color:${checks.keystroke_verifier==='PASS'?'var(--clear)':'var(--violation)'}">${checks.keystroke_verifier||'PASS'}</b></div>
+        <div class="check-item"><span>Camera:</span> <b style="color:${!isCamera ? 'var(--text-dim)' : checks.camera==='VIOLATION'?'var(--violation)':'var(--clear)'}">${!isCamera ? 'EXEMPT' : (checks.camera || 'ACTIVE')}</b></div>
+        <div class="check-item"><span>Integrity:</span> <b style="color:${checks.process_integrity==='PASS'?'var(--clear)':'var(--violation)'}">${checks.process_integrity||'PASS'}</b></div>
+      </div>
+      <div class="event-stream">${(data.event_log || []).slice(-4).map(e => `<div class="event-entry">${typeof e === 'string' ? e : (e.details || 'Event logged')}</div>`).join('')}</div>
+      ${data.evidences && data.evidences.length > 0 ? `
+        <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25); border-radius:8px; padding:10px; margin-top:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <small style="font-family: var(--font-mono); color: var(--violation); font-weight:700;">🚨 Captured Forensic Evidence (${data.evidences.length})</small>
+            <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-dim);">Click to view full preview</span>
+          </div>
+          <div class="evidence-tray">
+            ${data.evidences.map((img, idx) => `<img src="${img}" class="evidence-thumb" onclick="openEvidenceModal('${id}', ${idx})" title="Click to view full screenshot evidence"/>`).join('')}
+          </div>
+        </div>` : ''}
+      
+      <!-- Reassign & Re-Authorization Section -->
+      <div style="background: ${isTerminated ? 'var(--violation-dim)' : 'var(--surface-raised)'}; border: 1px solid ${isTerminated ? 'rgba(239,68,68,0.4)' : 'var(--border)'}; border-radius:10px; padding:12px; margin-top:10px; text-align:center;">
+        ${isTerminated ? `
+          <div style="color:var(--violation); font-family:var(--font-display); font-weight:700; font-size:12px; margin-bottom:4px;">🔒 EXAM SESSION LOCKED</div>
+          <div style="color:var(--text-muted); font-size:11px; margin-bottom:10px;">${data.terminationReason || 'Score < 80% or violation detected. Progress saved.'}</div>
+        ` : ''}
+        
+        ${data.newAssignedCode ? `
+          <div style="background:#09090b; border:2px solid #38bdf8; border-radius:8px; padding:10px; margin-bottom:8px;">
+            <div style="color:#38bdf8; font-family:var(--font-mono); font-size:11px; font-weight:700;">🔑 REASSIGNED PASSCODE:</div>
+            <div style="font-family:var(--font-mono); font-size:24px; font-weight:800; color:#ffffff; letter-spacing:4px; margin:6px 0;">${data.newAssignedCode}</div>
+            <button type="button" onclick="copyCodeToClipboard('${data.newAssignedCode}', this)" style="background:transparent; border:1px solid #38bdf8; color:#38bdf8; font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer; font-family:var(--font-mono); margin-bottom:6px;">📋 Copy Code</button>
+            <div style="color:var(--text-dim); font-size:10px;">Share with candidate to unlock test and continue where they left off.</div>
+          </div>
+          <button class="btn-resume-session" onclick="reassignNewPasscode('${id}')" style="background:#3b82f6;">🔄 Re-Generate Code</button>
+        ` : `
+          <button class="btn-resume-session" onclick="reassignNewPasscode('${id}')">🔑 Reassign New 6-Digit Access Code</button>
+        `}
+      </div>
+    `;
+  }
+
+  function openEvidenceModal(candidateId, index) {
+    const cand = candidateMap.get(candidateId);
+    if (cand && cand.evidences && cand.evidences[index]) {
+      modalImg.src = cand.evidences[index];
+      imageModal.classList.add('active');
+    }
+  }
+
+  function clearCandidateSession(candidateId) {
+    candidateMap.delete(candidateId);
+    assignedCodesMap.delete(candidateId);
+    document.getElementById(`card-${candidateId}`)?.remove();
+    candidateCount.innerText = `Monitored Sessions: ${candidateMap.size}`;
+    if (candidateMap.size === 0) {
+      candidatesGrid.innerHTML = `<div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); grid-column: 1 / -1; text-align: center; padding: 40px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;">No active candidate sessions connected. Standing by for candidate logins...</div>`;
+    }
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'CLEAR_CANDIDATE_SESSION', candidateId: candidateId }));
+    }
+  }
+
+  function clearAllMonitoredSessions() {
+    if (!confirm('Are you sure you want to clear all active monitored candidate sessions?')) return;
+    candidateMap.clear();
+    assignedCodesMap.clear();
+    candidatesGrid.innerHTML = `<div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); grid-column: 1 / -1; text-align: center; padding: 40px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;">No active candidate sessions connected. Standing by for candidate logins...</div>`;
+    candidateCount.innerText = `Monitored Sessions: 0`;
+    if (facultyAlertToast) facultyAlertToast.classList.remove('active');
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'CLEAR_MONITORED_SESSIONS' }));
+    }
+  }
+
+  if (clearSessionsBtn) {
+    clearSessionsBtn.addEventListener('click', clearAllMonitoredSessions);
+  }
+
+  closeModalBtn.addEventListener('click', () => imageModal.classList.remove('active'));
+  imageModal.addEventListener('click', (e) => { if (e.target === imageModal) imageModal.classList.remove('active'); });
+</script>
+</body>
+</html>

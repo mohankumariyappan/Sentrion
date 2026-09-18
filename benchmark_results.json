@@ -1,0 +1,14 @@
+{
+  "normal_exam_session": {
+    "polling_rate": "1 request / 1.5 seconds",
+    "avg_cpu_percent": 17.04,
+    "peak_cpu_percent": 78.9,
+    "avg_ram_rss_mb": 31.53
+  },
+  "stress_test": {
+    "polling_rate": "20 requests / second",
+    "total_requests": 98,
+    "avg_cpu_percent": 38.52,
+    "peak_cpu_percent": 130.2
+  }
+}

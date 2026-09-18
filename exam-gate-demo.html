@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENTRION · Exam Integrity Portal</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpolygon points='32,4 56,18 56,46 32,60 8,46 8,18' fill='%23080B11' stroke='%230ea5e9' stroke-width='4'/%3E%3Cpolygon points='32,12 50,22 50,42 32,52 14,42 14,22' fill='none' stroke='%23334155' stroke-width='2'/%3E%3Ccircle cx='56' cy='18' r='3.5' fill='%2310b981'/%3E%3Ccircle cx='56' cy='18' r='6' stroke='%2310b981' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='26' cy='34' r='7' stroke='%230ea5e9' stroke-width='3' fill='none'/%3E%3Ccircle cx='26' cy='34' r='3' fill='%2310b981'/%3E%3Cpath d='M 17,25 A 13,13 0 0,1 26,21' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M 11,20 A 20,20 0 0,1 26,14' stroke='%2310b981' stroke-width='2.8' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+<style>
+  /* =========================================
+     CSS VARIABLES & BASE - HIGH CONTRAST THEME
+     ========================================= */
+  :root {
+    /* Obsidian Neutrals */
+    --bg: #09090b;
+    --surface: #18181b;
+    --surface-raised: #27272a;
+    --border: #3f3f46;
+    --border-soft: #27272a;
+    
+    /* High Contrast Typography */
+    --text: #ffffff;
+    --text-muted: #d4d4d8;
+    --text-dim: #a1a1aa;
+    
+    /* Vibrant Semantic Colors */
+    --clear: #10b981; 
+    --clear-dim: rgba(16, 185, 129, 0.15);
+    
+    --warning: #f59e0b;
+    --warning-dim: rgba(245, 158, 11, 0.15);
+    
+    --violation: #ef4444;
+    --violation-dim: rgba(239, 68, 68, 0.15);
+    
+    /* Vibrant Electric Blue Accents */
+    --accent: #0284c7; 
+    --accent-blue: #38bdf8;
+    --accent-hover: #0369a1;
+    
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 1000px 600px at 15% -10%, rgba(2, 132, 199, 0.08), transparent),
+      radial-gradient(ellipse 800px 500px at 100% 20%, rgba(16, 185, 129, 0.05), transparent);
+  }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* =========================================
+     HEADER & NAVIGATION
+     ========================================= */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 24px; border-bottom: 1px solid var(--border-soft); margin-bottom: 32px;
+  }
+  
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .brand-svg { width: 48px; height: 48px; }
+  .brand-title { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.12em; color: #ffffff; line-height: 1; }
+  .brand-sub { font-family: var(--font-display); font-size: 11px; color: var(--accent-blue); letter-spacing: 0.22em; font-weight: 700; margin-top: 4px; }
+  
+  .session-badge { 
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); 
+    background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 24px; 
+  }
+  .session-badge span { color: var(--text-muted); font-weight: 500; }
+
+  /* =========================================
+     COMPONENTS & CARDS
+     ========================================= */
+  .pulse-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; display: flex; align-items: center; gap: 24px; margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+  .node-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--surface-raised); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .node-icon svg { width: 24px; height: 24px; stroke: var(--text-muted); }
+  .pulse-track { flex: 1; height: 40px; }
+  .pulse-track svg { width: 100%; height: 100%; display: block; }
+  .pulse-line { fill: none; stroke: var(--clear); stroke-width: 2.5; stroke-linecap: round; }
+  .pulse-dot { fill: var(--clear); filter: drop-shadow(0 0 8px currentColor); }
+
+  .pill { font-family: var(--font-mono); font-size: 12px; font-weight: 700; padding: 6px 16px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.05em; background: var(--clear-dim); color: var(--clear); border: 1px solid rgba(16, 185, 129, 0.4); transition: all 0.3s; }
+  .pill.state-warning { background: var(--warning-dim); color: var(--warning); border-color: rgba(245, 158, 11, 0.4); }
+  .pill.state-violation { background: var(--violation-dim); color: var(--violation); border-color: rgba(239, 68, 68, 0.4); }
+  .pill.state-offline { background: var(--surface-raised); color: var(--text-dim); border-color: var(--border); }
+
+  .gate-card, .apps-card, .input-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 28px; margin-bottom: 24px;
+  }
+  .gate-card { display: flex; align-items: center; justify-content: space-between; }
+  .gate-text { font-size: 14px; color: var(--text-muted); }
+  .gate-text strong { color: var(--text); }
+  
+  .card-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+
+  /* =========================================
+     BUTTONS & INPUTS
+     ========================================= */
+  .btn-primary {
+    background: var(--accent); color: #ffffff; font-weight: 700; font-size: 14px;
+    padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); transition: all 0.2s ease;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--surface-raised); color: var(--text-dim); box-shadow: none; cursor: not-allowed; transform: none; border: 1px solid var(--border); }
+
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
+  .btn-ghost:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(56, 189, 248, 0.1); }
+
+  .input-textarea {
+    width: 100%; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; color: var(--text); font-family: var(--font-body); font-size: 14px;
+    line-height: 1.7; outline: none; resize: vertical; min-height: 120px; transition: border-color 0.2s;
+  }
+  .input-textarea:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
+  .input-textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .input-meta { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-top: 12px; }
+  .input-meta strong { color: var(--text-muted); font-weight: 600; }
+
+  /* =========================================
+     MODE TABS & INTERVIEW UI
+     ========================================= */
+  .mode-tab-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+  .mode-tab {
+    font-family: var(--font-display); font-size: 14px; font-weight: 600; padding: 12px 20px;
+    border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-dim); cursor: pointer; transition: all 0.2s ease;
+  }
+  .mode-tab:hover:not(.active) { color: var(--text-muted); background: var(--surface-raised); }
+  .mode-tab.active { background: var(--surface-raised); border-color: var(--accent-blue); color: var(--text); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+  /* Gaze & Camera Sentinel Card */
+  .gaze-card {
+    display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; margin-bottom: 28px; flex-direction: column; gap: 20px;
+  }
+  .gaze-card.active { display: flex; }
+
+  .gaze-row { display: flex; align-items: center; gap: 24px; }
+  .gaze-video-box { position: relative; width: 220px; height: 165px; border-radius: 12px; background: #000; overflow: hidden; border: 1px solid var(--border); flex-shrink: 0; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+  .gaze-video-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .gaze-video-box canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  
+  .webcam-meta { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .gaze-pill { font-family: var(--font-mono); font-size: 12px; padding: 6px 14px; border-radius: 8px; background: var(--clear-dim); color: var(--clear); font-weight: 700; display: inline-block; transition: all 0.3s; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .gaze-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .gaze-stat-box { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+  .gaze-stat-box strong { color: var(--text); display: block; font-size: 14px; margin-top: 4px; font-weight: 600; }
+
+  /* =========================================
+     TELEMETRY & LOGGING GRIDS
+     ========================================= */
+  .apps-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .app-tag { font-family: var(--font-mono); font-size: 12px; background: var(--surface-raised); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+  .app-tag.flagged { background: var(--violation-dim); border-color: rgba(239, 68, 68, 0.4); color: var(--violation); font-weight: 700; }
+
+  .checks-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+  .check-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .check-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .check-name { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text); }
+  .check-detail { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); word-break: break-word; }
+  
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--clear); box-shadow: 0 0 10px var(--clear); transition: all 0.3s; }
+  .state-warning .dot { background: var(--warning); box-shadow: 0 0 10px var(--warning); }
+  .state-violation .dot { background: var(--violation); box-shadow: 0 0 10px var(--violation); }
+
+  .log-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; max-height: 250px; overflow-y: auto; }
+  .log-row { display: flex; gap: 16px; font-family: var(--font-mono); font-size: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
+  .log-row:last-child { border-bottom: none; }
+  .log-time { color: var(--text-dim); flex-shrink: 0; }
+  .log-mod { color: var(--accent-blue); flex-shrink: 0; width: 130px; font-weight: 600; }
+  .log-text { color: var(--text-muted); flex: 1; }
+  .log-row.violation .log-text { color: var(--violation); font-weight: 700; }
+  .log-row.warning .log-text { color: var(--warning); font-weight: 500; }
+  .log-empty { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); text-align: center; padding: 16px 0; }
+
+  /* =========================================
+     EVIDENCE VAULT CARD (AT BOTTOM OF PAGE)
+     ========================================= */
+  .evidence-vault-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; margin-top: 28px; margin-bottom: 32px;
+  }
+  .evidence-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+  }
+  .evidence-item {
+    background: var(--surface-raised); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s ease;
+  }
+  .evidence-item:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+  .evidence-img {
+    width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border);
+    cursor: pointer; background: #000;
+  }
+  .evidence-header { display: flex; justify-content: space-between; align-items: center; }
+  .evidence-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
+  .evidence-tag.violation { background: var(--violation-dim); color: var(--violation); border: 1px solid rgba(239, 68, 68, 0.3); }
+  .evidence-tag.warning { background: var(--warning-dim); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .evidence-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+  .evidence-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; word-break: break-word; }
+
+  /* Lightbox Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 24px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-content {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    max-width: 840px; width: 100%; padding: 24px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
+  .modal-close:hover { color: var(--text); }
+
+  /* =========================================
+     TERMINATION BANNER
+     ========================================= */
+  .term-banner {
+    display: none; background: var(--violation-dim); border: 2px solid var(--violation);
+    color: var(--violation); font-family: var(--font-display); font-weight: 700; font-size: 16px;
+    padding: 20px 24px; border-radius: 14px; margin-bottom: 28px; text-align: center; letter-spacing: 0.05em;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
+  }
+  .term-banner.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+  
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+  
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--surface); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header Bar -->
+  <div class="topbar">
+    <div class="brand">
+      <svg class="brand-svg" viewBox="0 0 64 64" fill="none">
+        <polygon points="32,4 56,18 56,46 32,60 8,46 8,18" fill="#09090B" stroke="#38bdf8" stroke-width="4"/>
+        <polygon points="32,12 50,22 50,42 32,52 14,42 14,22" fill="none" stroke="#3f3f46" stroke-width="2"/>
+        <circle cx="56" cy="18" r="3.5" fill="#10b981"/>
+        <circle cx="26" cy="34" r="6" stroke="#38bdf8" stroke-width="2.5" fill="none"/>
+        <circle cx="26" cy="34" r="3" fill="#10b981"/>
+      </svg>
+      <div>
+        <div class="brand-title">SENTRION</div>
+        <div class="brand-sub">EXAM INTEGRITY PORTAL</div>
+      </div>
+    </div>
+    <div class="session-badge">session <span id="sessionIdText">connecting...</span></div>
+  </div>
+
+  <!-- Connection Status Pulse Banner -->
+  <div class="pulse-card">
+    <div class="node-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </div>
+    <div class="pulse-track">
+      <svg viewBox="0 0 400 40" preserveAspectRatio="none">
+        <path id="pulsePath" class="pulse-line" d="M0,20 L160,20 L172,5 L184,35 L196,20 L400,20"/>
+        <circle id="pulseDot" class="pulse-dot" cx="0" cy="20" r="4"/>
+      </svg>
+    </div>
+    <div class="node-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h6M9 18h.01"/></svg>
+    </div>
+    <div class="pill state-offline" id="riskPill">Connecting</div>
+  </div>
+
+  <!-- Candidate Security & Privacy Disclosure Card -->
+  <div class="gate-card" style="flex-direction: column; align-items: flex-start; gap: 16px;">
+    <div class="gate-text">
+      <strong>📜 Candidate Privacy & Data Monitoring Disclosure:</strong>
+      <ul style="margin-left: 20px; margin-top: 8px; line-height: 1.7; color: var(--text-muted);">
+        <li><strong>Scoped Keystroke Correlation:</strong> Hardware keydown timing (ms) is monitored <em>ONLY</em> while the exam browser window has active focus. Keystrokes in external apps are <strong>never recorded or stored</strong>.</li>
+        <li><strong>Zero Keystroke Logging:</strong> No text content, key values, passwords, or personal data are recorded. Only hardware vs web timing deltas are verified to detect bot macros.</li>
+        <li><strong>Local Edge Processing:</strong> All biometric & process checks execute locally on your device. Zero HD video is streamed to cloud servers.</li>
+      </ul>
+    </div>
+    <label style="display: flex; align-items: center; gap: 12px; font-size: 14px; cursor: pointer; color: var(--text); font-weight: 600;">
+      <input type="checkbox" id="consentCheckbox" style="width: 18px; height: 18px; accent-color: var(--accent-blue);">
+      I have read, understood, and consent to keystroke correlation & session monitoring during this exam.
+    </label>
+  </div>
+
+  <!-- Pre-Check Gate Card -->
+  <div class="gate-card">
+    <div class="gate-text">
+      <strong>Environment Pre-Check Gate.</strong> Exam start is permitted ONLY when environment is <strong>CLEAR</strong> and candidate consent is acknowledged.
+    </div>
+    <button class="btn-primary" id="startBtn" disabled>Start Exam</button>
+  </div>
+
+  <!-- EXAM TERMINATED BANNER -->
+  <div class="term-banner" id="termBanner">
+    🚨 EXAM SESSION TERMINATED — SECURITY VIOLATION DETECTED DURING ACTIVE EXAM
+  </div>
+
+  <!-- MODE SELECTION TABS -->
+  <div class="mode-tab-bar">
+    <div class="mode-tab active" id="tabExam">📝 Written Exam Mode</div>
+    <div class="mode-tab" id="tabInterview">🎙️ Interview Mode</div>
+  </div>
+
+  <!-- Eye Iris & Gaze Tracking Sentinel (Monitored in Interview Mode) -->
+  <div class="gaze-card" id="gazeCard">
+    <div class="gaze-row">
+      <div class="gaze-video-box">
+        <video id="webcamVideo" autoplay playsinline muted></video>
+        <canvas id="gazeCanvas"></canvas>
+      </div>
+      <div class="webcam-meta">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="gaze-pill" id="gazePill">● INITIALIZING AI FACE DETECTOR...</span>
+          <button class="btn-ghost" id="enableCamBtn" style="display:none;">Enable Camera Stream</button>
+        </div>
+        <div class="gaze-stats-grid" style="margin-top: 12px;">
+          <div class="gaze-stat-box">Gaze Zone: <strong id="statGazeZone">CENTER_SCREEN</strong></div>
+          <div class="gaze-stat-box">1-Min Blink Window: <strong id="statBlinkState">Monitoring (0 blinks)</strong></div>
+          <div class="gaze-stat-box">Focus Score: <strong id="statFocusScore" style="color: var(--clear);">100 / 100</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Candidate Answer Input (Written Exam Mode) -->
+  <div class="input-card" id="inputCard">
+    <div class="card-title">Candidate Answer Input (Written Exam)</div>
+    <textarea class="input-textarea" id="examInput" placeholder="Type your answer here... Sentrion actively monitors session security..."></textarea>
+    <div class="input-meta">
+      <span>Chars typed: <strong id="charCount">0</strong></span>
+      <span>Hardware Hook Matches: <strong id="hwMatches">0</strong></span>
+      <span>Integrity Score: <strong id="examIntegrityScore" style="color: var(--clear);">100 / 100</strong></span>
+    </div>
+  </div>
+
+  <!-- Active User Desktop Applications -->
+  <div class="card-title">Active User Desktop Applications</div>
+  <div class="apps-card">
+    <div class="apps-grid" id="appsGrid">
+      <div class="app-tag">scanning processes...</div>
+    </div>
+  </div>
+
+  <!-- OS Security Protection Modules -->
+  <div class="card-title">OS Security Protection Modules</div>
+  <div class="checks-grid" id="checksGrid"></div>
+
+  <!-- Security Audit Event Log -->
+  <div class="card-title">Security Event Log</div>
+  <div class="log-card" id="logCard">
+    <div class="log-empty">No events recorded. System monitoring active.</div>
+  </div>
+
+  <!-- Security Evidence & Forensic Audit Vault (AT THE BOTTOM OF THE WEB PAGE) -->
+  <div class="card-title" style="margin-top: 32px;">🚨 Security Evidence & Forensic Audit Vault</div>
+  <div class="evidence-vault-card" id="evidenceVaultCard">
+    <div class="evidence-grid" id="evidenceGrid">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); text-align: center; grid-column: 1 / -1; padding: 16px 0;">
+        No active violations detected. System evidence vault standing by.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Full Screen Screenshot Evidence Preview Lightbox Modal -->
+<div class="modal-overlay" id="evidenceModal">
+  <div class="modal-content">
+    <button class="modal-close" id="closeModalBtn">✕</button>
+    <div id="modalTitle" style="font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--violation); margin-bottom: 12px;">SECURITY EVIDENCE PREVIEW</div>
+    <img id="modalImg" src="" style="width: 100%; border-radius: 10px; border: 1px solid var(--border); display: block; margin-bottom: 14px;">
+    <div id="modalDetails" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); line-height: 1.6;"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const COMPANION_BASE = "http://127.0.0.1:9999";
+  const POLL_INTERVAL_MS = 1500;
+
+  const CHECK_META = {
+    overlay: "Overlay Scanner",
+    vm: "VM Detector",
+    display: "Display Topology",
+    process_blacklist: "Process Blacklist",
+    camera: "Camera Check",
+    synthetic_input: "Synthetic Input",
+    process_integrity: "Process Integrity",
+  };
+
+  // State Management
+  const state = {
+    activeMode: "EXAM", // Default: Written Exam Mode (No Camera)
+    sessionToken: null,
+    sessionStarted: false,
+    examInProgress: false, // Score decreases start ONLY after candidate clicks Start Exam!
+    examTerminated: false,
+    pollTimer: null,
+    pulseAnim: null,
+    hwHookMatches: 0,
+    cameraRequested: false,
+    blinkTimestamps: [],
+    gazeZone: "CENTER_SCREEN",
+    cameraStartTime: Date.now(),
+    instantCanvasAnim: null,
+    lastFrameTime: 0,
+    frameDeltas: [],
+    activeChallenge: null,
+    challengeStartTime: 0,
+    challengePassed: false,
+    seenEventIds: new Set(),
+    seenEvidenceIds: new Set(),
+    
+    // Dynamic Monotonic Decreasing Scores (Locks at 100, never increases after decrease)
+    focusScore: 100.0,
+    examScore: 100.0
+  };
+
+  // DOM Elements
+  const els = {
+    checksGrid: document.getElementById("checksGrid"),
+    logCard: document.getElementById("logCard"),
+    riskPill: document.getElementById("riskPill"),
+    startBtn: document.getElementById("startBtn"),
+    sessionIdText: document.getElementById("sessionIdText"),
+    pulseDot: document.getElementById("pulseDot"),
+    pulsePath: document.getElementById("pulsePath"),
+    appsGrid: document.getElementById("appsGrid"),
+    examInput: document.getElementById("examInput"),
+    termBanner: document.getElementById("termBanner"),
+    webcamVideo: document.getElementById("webcamVideo"),
+    gazeCanvas: document.getElementById("gazeCanvas"),
+    gazePill: document.getElementById("gazePill"),
+    enableCamBtn: document.getElementById("enableCamBtn"),
+    gazeCard: document.getElementById("gazeCard"),
+    inputCard: document.getElementById("inputCard"),
+    tabExam: document.getElementById("tabExam"),
+    tabInterview: document.getElementById("tabInterview"),
+    consentCheckbox: document.getElementById("consentCheckbox"),
+    statGazeZone: document.getElementById("statGazeZone"),
+    statBlinkState: document.getElementById("statBlinkState"),
+    statFocusScore: document.getElementById("statFocusScore"),
+    examIntegrityScore: document.getElementById("examIntegrityScore"),
+    charCount: document.getElementById("charCount"),
+    hwMatches: document.getElementById("hwMatches"),
+    missCount: document.getElementById("missCount"),
+    evidenceGrid: document.getElementById("evidenceGrid"),
+    evidenceModal: document.getElementById("evidenceModal"),
+    closeModalBtn: document.getElementById("closeModalBtn"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalImg: document.getElementById("modalImg"),
+    modalDetails: document.getElementById("modalDetails")
+  };
+
+  // Helper Functions
+  function detectCurrentBrowserExe() {
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes("edg/") || ua.includes("edge/")) return "msedge.exe";
+    if (ua.includes("firefox/")) return "firefox.exe";
+    if (ua.includes("brave/")) return "brave.exe";
+    return "chrome.exe";
+  }
+
+  function getScoreColor(score) {
+    if (score >= 80) return "var(--clear)";
+    if (score >= 50) return "var(--warning)";
+    return "var(--violation)";
+  }
+
+  function stopCameraStream() {
+    if (els.webcamVideo && els.webcamVideo.srcObject) {
+      const stream = els.webcamVideo.srcObject;
+      if (stream.getTracks) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      els.webcamVideo.srcObject = null;
+    }
+    state.cameraRequested = false;
+  }
+
+  function animatePulse(active) {
+    if (state.pulseAnim) cancelAnimationFrame(state.pulseAnim);
+    if (!active) { 
+      els.pulseDot.setAttribute("cx", "0"); 
+      return; 
+    }
+    
+    let t = 0;
+    const path = els.pulsePath;
+    const len = path.getTotalLength();
+    
+    function step() {
+      t += 1.5;
+      if (t > len) t = 0;
+      const pt = path.getPointAtLength(t);
+      els.pulseDot.setAttribute("cx", pt.x);
+      els.pulseDot.setAttribute("cy", pt.y);
+      state.pulseAnim = requestAnimationFrame(step);
+    }
+    step();
+  }
+
+  // Real-Time Security Event Logging
+  function pushEvent(moduleName, status, details, customTimeStr = null) {
+    const emptyMsg = els.logCard.querySelector(".log-empty");
+    if (emptyMsg) emptyMsg.remove();
+
+    const row = document.createElement("div");
+    row.className = "log-row " + (status || "clear").toLowerCase();
+    const timeStr = customTimeStr || (new Date().toTimeString().split(" ")[0] + "." + String(new Date().getMilliseconds()).padStart(3, "0"));
+
+    row.innerHTML = `
+      <div class="log-time">${timeStr}</div>
+      <div class="log-mod">${CHECK_META[moduleName] || moduleName}</div>
+      <div class="log-text">${details}</div>
+    `;
+    els.logCard.insertBefore(row, els.logCard.firstChild);
+  }
+
+  // Render Evidence Vault at Bottom of Page
+  function renderEvidenceVault(evidences) {
+    if (!evidences || !Array.isArray(evidences) || evidences.length === 0) return;
+    
+    const placeholder = els.evidenceGrid.querySelector("div");
+    if (placeholder && placeholder.textContent.includes("standing by")) {
+      els.evidenceGrid.innerHTML = "";
+    }
+
+    evidences.forEach(ev => {
+      if (state.seenEvidenceIds.has(ev.id)) return;
+      state.seenEvidenceIds.add(ev.id);
+
+      const item = document.createElement("div");
+      item.className = "evidence-item";
+      item.innerHTML = `
+        <div class="evidence-header">
+          <span class="evidence-tag ${(ev.status || 'violation').toLowerCase()}">${ev.status || 'VIOLATION'}</span>
+          <span class="evidence-time">${ev.timestamp}</span>
+        </div>
+        <img class="evidence-img" src="${ev.screenshot}" alt="Evidence ${ev.id}" title="Click to view full evidence screenshot">
+        <div class="evidence-desc"><strong>${CHECK_META[ev.module] || ev.module}:</strong> ${ev.details}</div>
+      `;
+
+      const imgEl = item.querySelector(".evidence-img");
+      imgEl.addEventListener("click", () => {
+        els.modalTitle.textContent = `🚨 EVIDENCE PREVIEW: ${CHECK_META[ev.module] || ev.module} (${ev.status})`;
+        els.modalImg.src = ev.screenshot;
+        els.modalDetails.innerHTML = `
+          <strong>Evidence ID:</strong> ${ev.id}<br>
+          <strong>Timestamp:</strong> ${ev.timestamp}<br>
+          <strong>Module:</strong> ${CHECK_META[ev.module] || ev.module}<br>
+          <strong>Details:</strong> ${ev.details}
+        `;
+        els.evidenceModal.classList.add("active");
+      });
+
+      els.evidenceGrid.insertBefore(item, els.evidenceGrid.firstChild);
+    });
+  }
+
+  els.closeModalBtn.addEventListener("click", () => {
+    els.evidenceModal.classList.remove("active");
+  });
+  els.evidenceModal.addEventListener("click", (e) => {
+    if (e.target === els.evidenceModal) els.evidenceModal.classList.remove("active");
+  });
+
+  // Initialization & UI Logic
+  function initChecks() {
+    els.checksGrid.innerHTML = "";
+    Object.entries(CHECK_META).forEach(([key, label]) => {
+      const card = document.createElement("div");
+      card.className = "check-card";
+      card.id = "check-" + key;
+      card.innerHTML = `
+        <div class="check-top">
+          <div class="check-name">${label}</div>
+          <div class="dot"></div>
+        </div>
+        <div class="check-detail">standing by</div>
+      `;
+      els.checksGrid.appendChild(card);
+    });
+  }
+
+  function setRisk(risk) {
+    const r = (risk || "clear").toLowerCase();
+    els.riskPill.className = "pill" + (r === "clear" ? "" : r === "warning" ? " state-warning" : r === "violation" ? " state-violation" : " state-offline");
+    els.riskPill.textContent = r === "offline" ? "Offline" : r.charAt(0).toUpperCase() + r.slice(1);
+
+    const lineColor = r === "clear" ? "var(--clear)" : r === "warning" ? "var(--warning)" : r === "violation" ? "var(--violation)" : "var(--text-dim)";
+    els.pulsePath.style.stroke = lineColor;
+    els.pulseDot.style.fill = lineColor;
+
+    // PRE-CHECK GATE
+    if (!state.examInProgress && !state.examTerminated) {
+      const isConsentChecked = els.consentCheckbox ? els.consentCheckbox.checked : false;
+      els.startBtn.disabled = (r !== "clear" || !isConsentChecked);
+    }
+
+    // MID-SESSION EXAM TERMINATION
+    if (state.examInProgress && r === "violation") {
+      terminateExam("Security Violation Detected during active session");
+    }
+  }
+
+  function terminateExam(reason) {
+    if (state.examTerminated) return;
+    state.examInProgress = false;
+    state.examTerminated = true;
+    
+    els.examInput.disabled = true;
+    els.startBtn.disabled = true;
+    els.startBtn.textContent = "EXAM TERMINATED";
+    
+    els.termBanner.classList.add("active");
+    els.termBanner.textContent = `🚨 EXAM SESSION TERMINATED: ${reason.toUpperCase()}`;
+    pushEvent("overlay", "violation", `MID-SESSION EXAM TERMINATION: ${reason}`);
+  }
+
+  function updateChecks(checks) {
+    if (!checks) return;
+    Object.entries(checks).forEach(([key, data]) => {
+      const checkCard = document.getElementById("check-" + key);
+      if (!checkCard) return;
+
+      // In Written Exam Mode, exempt camera check from flags so pen & paper calculations are never penalized
+      if (key === "camera" && state.activeMode === "EXAM") {
+        checkCard.className = "check-card";
+        const detailEl = checkCard.querySelector(".check-detail");
+        if (detailEl) detailEl.textContent = "exempt in written exam mode (pen & paper permitted)";
+        return;
+      }
+
+      checkCard.className = "check-card" + (data.status === "warning" ? " state-warning" : data.status === "violation" ? " state-violation" : "");
+      const detailEl = checkCard.querySelector(".check-detail");
+      if (detailEl) detailEl.textContent = data.detail || "active";
+    });
+  }
+
+  function renderApps(userApps, blacklisted) {
+    els.appsGrid.innerHTML = "";
+    const activeHostBrowser = detectCurrentBrowserExe();
+
+    const blacklistedExes = new Set(
+      (blacklisted || []).map(b => (b.exe_name || "").toLowerCase())
+    );
+
+    if (blacklisted && blacklisted.length > 0) {
+      blacklisted.forEach(b => {
+        const tag = document.createElement("div");
+        tag.className = "app-tag flagged";
+        tag.textContent = `🚨 ${b.exe_name} (${b.app_name})`;
+        els.appsGrid.appendChild(tag);
+      });
+    }
+
+    let cleanList = (userApps || []).filter(appName => !blacklistedExes.has(appName.toLowerCase()));
+    if (!cleanList.some(a => a.toLowerCase() === activeHostBrowser.toLowerCase())) {
+      cleanList.unshift(activeHostBrowser);
+    }
+
+    if ((!blacklisted || blacklisted.length === 0) && cleanList.length === 0) {
+      els.appsGrid.innerHTML = '<div class="app-tag">No 3rd-party user applications active (Clean Desktop)</div>';
+      return;
+    }
+
+    cleanList.forEach(appName => {
+      const isHost = appName.toLowerCase() === activeHostBrowser.toLowerCase();
+      const tag = document.createElement("div");
+      tag.className = "app-tag";
+      tag.textContent = isHost ? `🌐 ${appName} (Active Host)` : `💻 ${appName}`;
+      els.appsGrid.appendChild(tag);
+    });
+  }
+
+  // API Integration Logic
+  async function establishSessionToken() {
+    try {
+      const res = await fetch(`${COMPANION_BASE}/session/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Host-Browser": detectCurrentBrowserExe()
+        },
+        body: JSON.stringify({ host_browser: detectCurrentBrowserExe() })
+      });
+      const data = await res.json();
+      if (data.status === "success" && data.token) {
+        state.sessionToken = data.token;
+        state.sessionStarted = true;
+        els.sessionIdText.textContent = state.sessionToken.substring(0, 10) + "...";
+        pushEvent("overlay", "clear", "Localhost session established & HMAC token signed");
+      }
+    } catch (e) {
+      pushEvent("overlay", "warning", "Failed to initiate session token handshake");
+    }
+  }
+
+  async function fetchStatus() {
+    if (!state.sessionToken && !state.sessionStarted) {
+      await establishSessionToken();
+    }
+
+    try {
+      const headers = {
+        "X-Host-Browser": detectCurrentBrowserExe()
+      };
+      if (state.sessionToken) headers["X-Session-Token"] = state.sessionToken;
+
+      const res = await fetch(`${COMPANION_BASE}/status`, { headers });
+      if (res.status === 401) {
+        state.sessionToken = null;
+        state.sessionStarted = false;
+        await establishSessionToken();
+        return;
+      }
+
+      const data = await res.json();
+
+      // Effective risk evaluation
+      let effRisk = (data.overall_risk || "clear").toLowerCase();
+      if (state.activeMode === "EXAM" && data.modules && data.modules.camera) {
+        effRisk = "clear";
+        Object.entries(data.modules).forEach(([mName, mData]) => {
+          if (mName !== "camera") {
+            const st = (mData.status || "clear").toLowerCase();
+            if (st === "violation") effRisk = "violation";
+            else if (st === "warning" && effRisk !== "violation") effRisk = "warning";
+          }
+        });
+      }
+      setRisk(effRisk);
+
+      // --- GRADUAL MONOTONIC INTEGRITY DECAY (WRITTEN EXAM MODE) ---
+      // Score calculation starts ONLY after exam/interview starts, and NEVER increases once decreased!
+      if (state.examInProgress && state.activeMode === "EXAM") {
+        if (effRisk === "violation") {
+          state.examScore = Math.max(0, state.examScore - 1.5); // Gradual slow decrease
+        } else if (effRisk === "warning") {
+          state.examScore = Math.max(0, state.examScore - 0.4); // Gradual slow decrease
+        }
+      }
+
+      if (els.examIntegrityScore) {
+        const roundedScore = Math.round(state.examScore);
+        els.examIntegrityScore.textContent = `${roundedScore} / 100`;
+        els.examIntegrityScore.style.color = getScoreColor(roundedScore);
+      }
+
+      updateChecks(data.checks);
+      animatePulse(true);
+
+      // Synchronize Real-Time Backend Event Logs to UI
+      const rawEvents = data.event_log || data.recent_events || [];
+      if (rawEvents && Array.isArray(rawEvents)) {
+        rawEvents.forEach(evt => {
+          if (evt.module === "camera" && state.activeMode === "EXAM") return; // Suppress camera logs during written exam
+          const evtId = `${evt.timestamp}_${evt.module}_${evt.status}_${evt.details}`;
+          if (!state.seenEventIds.has(evtId)) {
+            state.seenEventIds.add(evtId);
+            pushEvent(evt.module, (evt.status || "clear").toLowerCase(), evt.details || "Module status update", evt.timestamp);
+          }
+        });
+      }
+
+      // Synchronize Desktop Evidence Screenshots to Bottom Evidence Vault Card
+      if (data.evidences && Array.isArray(data.evidences) && data.evidences.length > 0) {
+        renderEvidenceVault(data.evidences);
+      }
+
+      if (data.modules && data.modules.process_blacklist) {
+        const blModule = data.modules.process_blacklist;
+        const payload = (blModule.findings && blModule.findings[0]) || {};
+        renderApps(payload.running_user_apps, payload.blacklisted);
+      }
+    } catch (e) {
+      setRisk("offline");
+      animatePulse(false);
+    }
+  }
+
+  // Event Listeners for Mode Selection Tabs
+  els.tabExam.addEventListener("click", () => {
+    state.activeMode = "EXAM";
+    els.tabExam.classList.add("active");
+    els.tabInterview.classList.remove("active");
+    els.gazeCard.classList.remove("active");
+    els.inputCard.style.display = "block";
+    stopCameraStream(); // Turn off camera hardware when switching to Written Exam Mode
+    pushEvent("overlay", "clear", "Switched to Written Exam Mode (Camera inactive — pen & paper permitted)");
+  });
+
+  els.tabInterview.addEventListener("click", () => {
+    state.activeMode = "INTERVIEW";
+    els.tabInterview.classList.add("active");
+    els.tabExam.classList.remove("active");
+    els.gazeCard.classList.add("active");
+    els.inputCard.style.display = "block";
+    pushEvent("camera", "clear", "Switched to Interview Mode (Webcam & Gaze Sentinel active)");
+    if (!state.cameraRequested) {
+      requestCameraAccess();
+    }
+  });
+
+  els.enableCamBtn.addEventListener("click", requestCameraAccess);
+
+  if (els.consentCheckbox) {
+    els.consentCheckbox.addEventListener("change", () => {
+      const currentRisk = (els.riskPill.textContent || "clear").toLowerCase();
+      els.startBtn.disabled = (currentRisk !== "clear" || !els.consentCheckbox.checked);
+      if (els.consentCheckbox.checked && state.activeMode === "INTERVIEW" && !state.cameraRequested) {
+        requestCameraAccess();
+      }
+    });
+  }
+
+  els.startBtn.addEventListener("click", () => {
+    state.examInProgress = true;
+    els.startBtn.disabled = true;
+    els.startBtn.textContent = "EXAM IN PROGRESS";
+    pushEvent("overlay", "clear", "Candidate initialized active session. Score evaluation activated.");
+    if (state.activeMode === "INTERVIEW" && !state.cameraRequested) {
+      requestCameraAccess();
+    }
+  });
+
+  // --- INSTANT TAB-SWITCH & WINDOW BLUR EVIDENCE CAPTURE ---
+  let lastTabSwitchTime = 0;
+  function triggerTabSwitchEvidence(reason) {
+    const now = Date.now();
+    if ((now - lastTabSwitchTime) < 5000) return; // 5s debounce guard
+    lastTabSwitchTime = now;
+
+    pushEvent("overlay", "violation", `🚨 TAB SWITCH DETECTED: Candidate navigated away from active exam window (${reason})`);
+    
+    if (state.examInProgress) {
+      state.examScore = Math.max(0, state.examScore - 2.5); // Gradual slow decrease on tab switch
+    }
+
+    if (state.sessionToken) {
+      fetch(`${COMPANION_BASE}/evidence/capture`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": state.sessionToken,
+          "X-Host-Browser": detectCurrentBrowserExe()
+        },
+        body: JSON.stringify({
+          module: "overlay",
+          status: "VIOLATION",
+          details: `Tab Switch / Focus Lost Infraction: Candidate switched tabs/windows (${reason})`
+        })
+      }).catch(() => {});
+    }
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      triggerTabSwitchEvidence("Browser tab hidden / Switched to another tab");
+    }
+  });
+
+  window.addEventListener("blur", () => {
+    triggerTabSwitchEvidence("Window focus lost / Switched to another window");
+  });
+
+  els.examInput.addEventListener("keydown", (e) => {
+    els.charCount.textContent = els.examInput.value.length + 1;
+    if (!state.sessionToken) return;
+
+    fetch(`${COMPANION_BASE}/keystroke/event`, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Session-Token": state.sessionToken
+      },
+      body: JSON.stringify({
+        char: e.key,
+        client_timestamp: Date.now() / 1000,
+        token: state.sessionToken
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.is_hardware_confirmed) {
+        state.hwHookMatches++;
+        els.hwMatches.textContent = state.hwHookMatches;
+      } else {
+        els.missCount.textContent = data.consecutive_misses || 0;
+        if (state.examInProgress) {
+          state.examScore = Math.max(0, state.examScore - 0.4); // Gradual slow decrease on un-hooked key
+        }
+      }
+    })
+    .catch(() => {});
+  });
+
+  // MediaPipe Async CDN Loader Guard
+  function ensureMediaPipeLoaded(callback) {
+    if (window.FaceMesh && window.Camera) {
+      callback();
+    } else {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (window.FaceMesh && window.Camera) {
+          clearInterval(interval);
+          callback();
+        } else if (attempts > 30) {
+          clearInterval(interval);
+          els.gazePill.style.background = "var(--warning-dim)";
+          els.gazePill.style.color = "var(--warning)";
+          els.gazePill.textContent = "⚠️ MEDIAPIPE CDN LOAD TIMEOUT";
+          pushEvent("camera", "warning", "MediaPipe CDN libraries loading timeout");
+        }
+      }, 250);
+    }
+  }
+
+  // MediaPipe Camera & FaceMesh Logic (Scoped to Interview Mode Only)
+  function requestCameraAccess() {
+    if (state.cameraRequested) return;
+    state.cameraRequested = true;
+    state.cameraStartTime = Date.now();
+    
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+        .then(stream => {
+          els.webcamVideo.srcObject = stream;
+          els.enableCamBtn.style.display = "none";
+          els.gazePill.style.display = "inline-block";
+          
+          startInstantTrackingCircle();
+          ensureMediaPipeLoaded(() => {
+            initGazeTracker();
+          });
+        })
+        .catch(err => {
+          els.enableCamBtn.style.display = "inline-block";
+          els.enableCamBtn.textContent = "⚠️ Camera Access Denied";
+          pushEvent("camera", "warning", "Camera access denied by browser/user permission");
+        });
+    }
+  }
+
+  function startInstantTrackingCircle() {
+    const ctx = els.gazeCanvas.getContext("2d");
+    els.gazeCanvas.width = 200;
+    els.gazeCanvas.height = 150;
+
+    function renderFrame() {
+      if (!state.cameraRequested || state.activeMode !== "INTERVIEW") return;
+      ctx.clearRect(0, 0, els.gazeCanvas.width, els.gazeCanvas.height);
+
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(50, 30, 100, 90);
+      ctx.setLineDash([]);
+
+      const cx = 100;
+      const cy = 75;
+
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 12, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      ctx.fillStyle = "#10b981";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+      ctx.fill();
+
+      state.instantCanvasAnim = requestAnimationFrame(renderFrame);
+    }
+    renderFrame();
+  }
+
+  function initGazeTracker() {
+    const ctx = els.gazeCanvas.getContext("2d");
+    els.gazeCanvas.width = 200;
+    els.gazeCanvas.height = 150;
+
+    // Blink Audit Rolling Window
+    setInterval(() => {
+      if (state.activeMode !== "INTERVIEW") return; // Suppress blink audit in Written Exam Mode
+      const now = Date.now();
+      const sessionDurationSec = (now - state.cameraStartTime) / 1000;
+      
+      state.blinkTimestamps = state.blinkTimestamps.filter(t => (now - t) <= 60000);
+      const blinksIn1Min = state.blinkTimestamps.length;
+
+      if (sessionDurationSec >= 60) {
+        els.statBlinkState.textContent = `${blinksIn1Min} blinks / 60s`;
+        if (blinksIn1Min < 3 && state.cameraRequested) {
+          els.gazePill.style.background = "var(--violation-dim)";
+          els.gazePill.style.color = "var(--violation)";
+          els.gazePill.textContent = `🚨 SPOOF ALERT: CAMERA FEED FROZE (${blinksIn1Min} < 3 BLINKS/MIN)`;
+          pushEvent("camera", "violation", `Camera feed static/frozen: Only ${blinksIn1Min} blinks in 60s window (Minimum 3 blinks required)`);
+          if (state.examInProgress) terminateExam(`Camera Feed Frozen / Anti-Spoofing Violation (${blinksIn1Min} < 3 Blinks/Min)`);
+        }
+      } else {
+        const remaining = Math.ceil(60 - sessionDurationSec);
+        els.statBlinkState.textContent = `${blinksIn1Min} blinks (${remaining}s warmup)`;
+      }
+    }, 1000);
+
+    if (window.FaceMesh && window.Camera) {
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 4,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.50,
+        minTrackingConfidence: 0.50
+      });
+
+      let wasEyeClosed = false;
+      let lastGazeEvidenceTime = 0;
+
+      function triggerSustainedGazeEvidence(gazeDirection, details) {
+        const now = Date.now();
+        if ((now - lastGazeEvidenceTime) < 8000) return; // 8s cooldown guard
+        lastGazeEvidenceTime = now;
+
+        try {
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = 320; tempCanvas.height = 240;
+          const tCtx = tempCanvas.getContext("2d");
+          tCtx.drawImage(els.webcamVideo, 0, 0, 320, 240);
+          tCtx.drawImage(els.gazeCanvas, 0, 0, 320, 240);
+          const shotB64 = tempCanvas.toDataURL("image/jpeg", 0.7);
+          
+          renderEvidenceVault([{
+            id: `EV-${Date.now()}-${gazeDirection}`,
+            timestamp: new Date().toTimeString().split(" ")[0],
+            module: "camera",
+            status: "WARNING",
+            details: details,
+            screenshot: shotB64
+          }]);
+
+          pushEvent("camera", "warning", `Sustained gaze infraction: ${details}`);
+        } catch (e) {}
+      }
+
+      faceMesh.onResults((results) => {
+        if (state.activeMode !== "INTERVIEW") return; // Zero camera penalties during Written Exam!
+        if (state.instantCanvasAnim) cancelAnimationFrame(state.instantCanvasAnim);
+        ctx.clearRect(0, 0, els.gazeCanvas.width, els.gazeCanvas.height);
+        
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.3)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(50, 30, 100, 90);
+        ctx.setLineDash([]);
+
+        const numFaces = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
+
+        if (numFaces === 0) {
+          if (state.examInProgress) {
+            state.focusScore = Math.max(0, state.focusScore - 0.3); // Gradual slow decrease on lost face
+          }
+          els.statGazeZone.textContent = "NO_FACE_DETECTED";
+          els.statFocusScore.textContent = `${Math.round(state.focusScore)} / 100`;
+          els.statFocusScore.style.color = getScoreColor(Math.round(state.focusScore));
+          els.gazePill.style.background = "var(--violation-dim)";
+          els.gazePill.style.color = "var(--violation)";
+          els.gazePill.textContent = "🚨 NO CANDIDATE FACE IN VIEW";
+          return;
+        }
+
+        // --- MULTIPLE PERSON DETECTION ENFORCEMENT & CAMERA EVIDENCE SNAPSHOT ---
+        if (numFaces > 1) {
+          if (state.examInProgress) {
+            state.focusScore = Math.max(0, state.focusScore - 2.0);
+            state.examScore = Math.max(0, state.examScore - 2.5); // Integrity score decreased
+          }
+          results.multiFaceLandmarks.forEach((face, idx) => {
+            const noseTip = face[1] || face[0];
+            const fx = noseTip.x * els.gazeCanvas.width;
+            const fy = noseTip.y * els.gazeCanvas.height;
+            
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(fx, fy, 16 + idx * 4, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            ctx.fillStyle = "#ef4444";
+            ctx.font = "bold 10px Inter, sans-serif";
+            ctx.fillText(`Person #${idx + 1}`, fx - 24, fy - 24);
+          });
+
+          els.statGazeZone.textContent = `MULTIPLE_FACES (${numFaces} PEOPLE)`;
+          const roundedFocus = Math.round(state.focusScore);
+          els.statFocusScore.textContent = `${roundedFocus} / 100`;
+          els.statFocusScore.style.color = getScoreColor(roundedFocus);
+
+          if (els.examIntegrityScore) {
+            const roundedScore = Math.round(state.examScore);
+            els.examIntegrityScore.textContent = `${roundedScore} / 100`;
+            els.examIntegrityScore.style.color = getScoreColor(roundedScore);
+          }
+
+          els.gazePill.style.background = "var(--warning-dim)";
+          els.gazePill.style.color = "var(--warning)";
+          els.gazePill.textContent = `⚠️ MULTIPLE PEOPLE IN VIEW (${numFaces} FACES) — INTEGRITY PENALTY APPLIED`;
+
+          // Capture browser webcam frame evidence to bottom vault (debounced)
+          const now = Date.now();
+          if (!state.lastMultiPersonEvidenceTime || (now - state.lastMultiPersonEvidenceTime) > 6000) {
+            state.lastMultiPersonEvidenceTime = now;
+            try {
+              const tempCanvas = document.createElement("canvas");
+              tempCanvas.width = 640; tempCanvas.height = 480;
+              const tCtx = tempCanvas.getContext("2d");
+              tCtx.drawImage(els.webcamVideo, 0, 0, 640, 480);
+              tCtx.drawImage(els.gazeCanvas, 0, 0, 640, 480);
+              const shotB64 = tempCanvas.toDataURL("image/jpeg", 0.75);
+              
+              renderEvidenceVault([{
+                id: `EV-${now}-MULTI-PERSON`,
+                timestamp: new Date().toTimeString().split(" ")[0],
+                module: "camera",
+                status: "WARNING",
+                details: `Multiple faces detected in feed (${numFaces} people present) — Integrity score decreased`,
+                screenshot: shotB64
+              }]);
+            } catch (e) {}
+
+            pushEvent("camera", "warning", `Multiple person detection: ${numFaces} faces visible in video stream — Integrity score penalized`);
+          }
+          // Do not terminate exam
+          return;
+        }
+
+        const landmarks = results.multiFaceLandmarks[0];
+        
+        // --- DUAL-EYE ASPECT RATIO (EAR) BLINK DETECTION ---
+        const leftEyeLeft = landmarks[33];
+        const leftEyeRight = landmarks[133];
+        const leftEyeTop = landmarks[159];
+        const leftEyeBottom = landmarks[145];
+
+        const rightEyeLeft = landmarks[362];
+        const rightEyeRight = landmarks[263];
+        const rightEyeTop = landmarks[386];
+        const rightEyeBottom = landmarks[374];
+
+        const leftEAR = Math.hypot(leftEyeTop.x - leftEyeBottom.x, leftEyeTop.y - leftEyeBottom.y) / (Math.hypot(leftEyeLeft.x - leftEyeRight.x, leftEyeLeft.y - leftEyeRight.y) + 0.0001);
+        const rightEAR = Math.hypot(rightEyeTop.x - rightEyeBottom.x, rightEyeTop.y - rightEyeBottom.y) / (Math.hypot(rightEyeLeft.x - rightEyeRight.x, rightEyeLeft.y - rightEyeRight.y) + 0.0001);
+        const ear = (leftEAR + rightEAR) / 2;
+
+        if (ear < 0.23) {
+          if (!wasEyeClosed) {
+            wasEyeClosed = true;
+            state.blinkTimestamps.push(Date.now());
+            els.statBlinkState.textContent = `${state.blinkTimestamps.length} blinks (Active)`;
+            pushEvent("camera", "clear", `Eye blink detected (EAR: ${ear.toFixed(2)})`);
+          }
+        } else if (ear > 0.25) {
+          wasEyeClosed = false;
+        }
+
+        // --- IRIS & GAZE ZONE CALCULATIONS ---
+        let leftIris = landmarks[468] || leftEyeLeft;
+        const eyeWidthReal = Math.abs(leftEyeRight.x - leftEyeLeft.x);
+        const eyeHeightReal = Math.abs(leftEyeBottom.y - leftEyeTop.y);
+
+        const irisHorizRatio = (leftIris.x - Math.min(leftEyeLeft.x, leftEyeRight.x)) / (eyeWidthReal + 0.0001);
+        const irisVertRatio = (leftIris.y - Math.min(leftEyeTop.y, leftEyeBottom.y)) / (eyeHeightReal + 0.0001);
+
+        const cx = leftIris.x * els.gazeCanvas.width;
+        const cy = leftIris.y * els.gazeCanvas.height;
+
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        ctx.fillStyle = "#10b981";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // --- MONOTONIC SLOW DECAY & GAZE DIRECTION DETECTION ---
+        if (irisHorizRatio > 0.66) {
+          state.gazeZone = "OFF_CENTER_RIGHT";
+          if (state.examInProgress) state.focusScore = Math.max(0, state.focusScore - 0.08); // Gradual slow decrease
+          els.gazePill.style.background = "var(--warning-dim)";
+          els.gazePill.style.color = "var(--warning)";
+          els.gazePill.textContent = "🚨 EYES LOOKING AT RIGHT CORNER";
+        } else if (irisHorizRatio < 0.34) {
+          state.gazeZone = "OFF_CENTER_LEFT";
+          if (state.examInProgress) state.focusScore = Math.max(0, state.focusScore - 0.08); // Gradual slow decrease
+          els.gazePill.style.background = "var(--warning-dim)";
+          els.gazePill.style.color = "var(--warning)";
+          els.gazePill.textContent = "🚨 EYES LOOKING AT LEFT CORNER";
+        } else if (irisVertRatio > 0.68) {
+          state.gazeZone = "LOOKING_DOWN (Phone/Notes)";
+          if (state.examInProgress) state.focusScore = Math.max(0, state.focusScore - 0.15); // Gradual slow decrease looking down
+          els.gazePill.style.background = "var(--violation-dim)";
+          els.gazePill.style.color = "var(--violation)";
+          els.gazePill.textContent = "🚨 EYES LOOKING DOWN (PHONE / PAPER DETECTED)";
+          
+          // Capture evidence if looking down is sustained
+          triggerSustainedGazeEvidence("LOOKING_DOWN", "Candidate looking down away from screen (suspected phone/notes)");
+        } else {
+          state.gazeZone = "CENTER_SCREEN";
+          els.gazePill.style.background = "var(--clear-dim)";
+          els.gazePill.style.color = "var(--clear)";
+          els.gazePill.textContent = "● GAZE CLEAR · EYES CENTERED ON DISPLAY";
+        }
+
+        const roundedFocus = Math.round(state.focusScore);
+        els.statFocusScore.textContent = `${roundedFocus} / 100`;
+        els.statFocusScore.style.color = getScoreColor(roundedFocus);
+        els.statGazeZone.textContent = state.gazeZone;
+
+        // Liveness Anti-Spoof
+        const nowFrameTime = performance.now();
+        if (state.lastFrameTime > 0) {
+          const delta = nowFrameTime - state.lastFrameTime;
+          state.frameDeltas.push(delta);
+          if (state.frameDeltas.length > 30) state.frameDeltas.shift();
+          
+          if (state.frameDeltas.length >= 30) {
+            const meanDelta = state.frameDeltas.reduce((a, b) => a + b, 0) / state.frameDeltas.length;
+            const variance = state.frameDeltas.reduce((a, b) => a + Math.pow(b - meanDelta, 2), 0) / state.frameDeltas.length;
+            const jitter = Math.sqrt(variance);
+            
+            if (jitter < 0.01 && meanDelta > 0) {
+              pushEvent("camera", "warning", "Zero frame jitter detected on camera feed — synthetic loop suspected");
+            }
+          }
+        }
+        state.lastFrameTime = nowFrameTime;
+
+        if (state.activeChallenge && !state.challengePassed) {
+          const elapsed = (Date.now() - state.challengeStartTime) / 1000;
+          if (elapsed <= 4.0) {
+            let matched = false;
+            if (state.activeChallenge.target === "LEFT" && irisHorizRatio < 0.34) matched = true;
+            if (state.activeChallenge.target === "RIGHT" && irisHorizRatio > 0.66) matched = true;
+            if (state.activeChallenge.target === "DOWN" && irisVertRatio > 0.72) matched = true;
+            
+            if (matched) {
+              state.challengePassed = true;
+              els.gazePill.style.background = "var(--clear-dim)";
+              els.gazePill.style.color = "var(--clear)";
+              els.gazePill.textContent = `✓ LIVENESS CHALLENGE PASSED (${state.activeChallenge.target})`;
+              pushEvent("camera", "clear", `Liveness Gaze Challenge Passed: Candidate responded with ${state.activeChallenge.target} gaze`);
+              setTimeout(() => { state.activeChallenge = null; }, 3000);
+            }
+          } else {
+            els.gazePill.style.background = "var(--violation-dim)";
+            els.gazePill.style.color = "var(--violation)";
+            els.gazePill.textContent = `🚨 LIVENESS CHALLENGE FAILED (${state.activeChallenge.target} GAZE MISSED)`;
+            pushEvent("camera", "warning", `Liveness Challenge Failed: Candidate failed to look ${state.activeChallenge.target} within 4s`);
+            if (state.examInProgress) terminateExam(`Liveness Challenge Failed (Missed ${state.activeChallenge.target} Gaze Response)`);
+            state.activeChallenge = null;
+          }
+        }
+      });
+
+      setInterval(() => {
+        if (state.activeMode === "INTERVIEW" && state.cameraRequested && !state.activeChallenge && state.sessionStarted) {
+          const targets = ["LEFT", "RIGHT", "DOWN"];
+          const selectedTarget = targets[Math.floor(Math.random() * targets.length)];
+          state.activeChallenge = { target: selectedTarget };
+          state.challengeStartTime = Date.now();
+          state.challengePassed = false;
+          
+          els.gazePill.style.background = "var(--warning-dim)";
+          els.gazePill.style.color = "var(--warning)";
+          els.gazePill.textContent = `⚡ LIVENESS PROMPT: LOOK SLIGHTLY ${selectedTarget} NOW (4s)`;
+        }
+      }, 35000);
+
+      const camera = new Camera(els.webcamVideo, {
+        onFrame: async () => {
+          if (state.activeMode === "INTERVIEW") {
+            await faceMesh.send({ image: els.webcamVideo });
+          }
+        },
+        width: 640,
+        height: 480
+      });
+      camera.start();
+    }
+  }
+
+  // Boot
+  initChecks();
+  pushEvent("overlay", "clear", "System monitoring active. Sentrion localhost bridge initialized.");
+  fetchStatus();
+  state.pollTimer = setInterval(fetchStatus, POLL_INTERVAL_MS);
+})();
+</script>
+</body>
+</html>
